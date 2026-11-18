@@ -29,7 +29,7 @@ export function parseLeadFilters(
 }
 
 export function buildLeadWhere(
-  filters: LeadFilters,
+  filters: Partial<LeadFilters>,
   now: Date = new Date(),
   currentUserId?: string
 ): Prisma.LeadWhereInput {
