@@ -260,6 +260,18 @@ async function main() {
     }));
   }
 
+  await prisma.payment.deleteMany({
+    where: {
+      reference: null,
+      OR: [
+        { bookingId: bookings[0].id, amount: 10000, kind: PaymentKind.ADVANCE },
+        { bookingId: bookings[0].id, amount: 16000, kind: PaymentKind.FINAL },
+        { bookingId: bookings[2].id, amount: 10000, kind: PaymentKind.ADVANCE },
+        { bookingId: bookings[2].id, amount: 1000, kind: PaymentKind.REFUND },
+      ],
+    },
+  });
+
   const paymentRefs = [
     { booking: 0, reference: "SEED-JB001-ADVANCE", amount: 8000, kind: PaymentKind.ADVANCE, mode: PaymentMode.UPI },
     { booking: 1, reference: "SEED-JB002-NO-PAYMENT", amount: 0, kind: PaymentKind.ADVANCE, mode: PaymentMode.UPI },
