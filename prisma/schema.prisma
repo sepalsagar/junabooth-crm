@@ -25,6 +25,15 @@ enum LeadActivityType {
   FOLLOW_UP_SET
 }
 
+enum BookingActivityType {
+  CREATED
+  STATUS_CHANGED
+  PAYMENT_ADDED
+  PAYMENT_VOIDED
+  PRICE_EDITED
+  NOTE
+}
+
 enum LeadSource {
   INSTAGRAM
   META_AD
@@ -91,6 +100,17 @@ enum UserRole {
   OPERATOR
 }
 
+model Package {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  hours     Int
+  price     Int
+  active    Boolean   @default(true)
+  bookings  Booking[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
 model Lead {
   id           String         @id @default(cuid())
   code         String         @unique
@@ -137,10 +157,12 @@ model LeadActivity {
 }
 
 model Booking {
-  id           String        @id @default(cuid())
-  code         String        @unique
-  leadId       String?       @unique
-  lead         Lead?         @relation(fields: [leadId], references: [id])
+  id           String            @id @default(cuid())
+  code         String            @unique
+  leadId       String?           @unique
+  lead         Lead?             @relation(fields: [leadId], references: [id])
+  packageId    String?
+  package      Package?          @relation(fields: [packageId], references: [id], onDelete: SetNull)
   clientName   String
   phone        String
   city         String?
@@ -151,21 +173,37 @@ model Booking {
   endTime      String?
   packageName  String
   basePrice    Int
-  travelCharge Int           @default(0)
-  discount     Int           @default(0)
-  type         BookingType   @default(PAID)
-  status       BookingStatus @default(CONFIRMED)
+  travelCharge Int               @default(0)
+  discount     Int               @default(0)
+  type         BookingType       @default(PAID)
+  status       BookingStatus     @default(CONFIRMED)
+  payOnEvent   Boolean           @default(false)
   dayContact   String?
   notes        String?
   payments     Payment[]
   expenses     Expense[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  activities   BookingActivity[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
 
   @@index([status])
   @@index([city])
   @@index([eventDate])
   @@index([type])
+  @@index([packageId])
+}
+
+model BookingActivity {
+  id        String              @id @default(cuid())
+  bookingId String
+  booking   Booking             @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  type      BookingActivityType
+  message   String
+  createdAt DateTime            @default(now())
+
+  @@index([bookingId, createdAt])
 }
 
 model Payment {
@@ -179,11 +217,16 @@ model Payment {
   receivedBy String?
   reference  String?
   note       String?
+  voidedAt   DateTime?
+  voidedById String?
+  voidedBy   User?       @relation("PaymentVoidedBy", fields: [voidedById], references: [id], onDelete: SetNull)
+  voidReason String?
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
 
   @@index([bookingId])
   @@index([paidOn])
+  @@index([voidedAt])
 }
 
 model Expense {
@@ -225,19 +268,21 @@ model Counter {
 }
 
 model User {
-  id             String         @id
-  name           String
-  email          String
-  emailVerified  Boolean        @default(false)
-  image          String?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  role           UserRole       @default(PARTNER)
-  sessions       Session[]
-  accounts       Account[]
-  ownedLeads     Lead[]         @relation("LeadOwner")
-  capitalEntries CapitalEntry[] @relation("CapitalPartner")
-  leadActivities LeadActivity[]
+  id                String            @id
+  name              String
+  email             String
+  emailVerified     Boolean           @default(false)
+  image             String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  role              UserRole          @default(PARTNER)
+  sessions          Session[]
+  accounts          Account[]
+  ownedLeads        Lead[]            @relation("LeadOwner")
+  capitalEntries    CapitalEntry[]    @relation("CapitalPartner")
+  leadActivities    LeadActivity[]
+  bookingActivities BookingActivity[]
+  voidedPayments    Payment[]         @relation("PaymentVoidedBy")
 
   @@unique([email])
   @@map("user")

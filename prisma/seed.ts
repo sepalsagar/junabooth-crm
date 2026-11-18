@@ -46,6 +46,21 @@ async function main() {
     create: { name: "JB", value: 4 },
   });
 
+  // Seed standard photobooth packages
+  const packages = [
+    { name: "Classic", hours: 3, price: 16000 },
+    { name: "Grand", hours: 4, price: 20000 },
+    { name: "Royal", hours: 6, price: 28000 },
+    { name: "Custom", hours: 0, price: 0 },
+  ];
+  for (const pkg of packages) {
+    await prisma.package.upsert({
+      where: { name: pkg.name },
+      update: { hours: pkg.hours, price: pkg.price, active: true },
+      create: { name: pkg.name, hours: pkg.hours, price: pkg.price, active: true },
+    });
+  }
+
   const leadDefs = [
     // 1-8: Original leads with diverse statuses
     { code: "ENQ-001", name: "Aarav Mehta", phone: "9876500001", city: "Patna", event: "Wedding", src: LeadSource.INSTAGRAM, st: LeadStatus.NEW, amt: 22000, targetOffset: 12, fuOffset: null, ownerIdx: 0, lostReason: null },
