@@ -23,12 +23,13 @@ async function main() {
   const users = await Promise.all([1, 2, 3, 4].map(async (index) => {
     const name = process.env[`SEED_PARTNER_${index}_NAME`] ?? `Demo User ${index}`;
     const email = process.env[`SEED_PARTNER_${index}_EMAIL`] ?? `partner${index}@example.test`;
-    const password = process.env[`SEED_PARTNER_${index}_PASSWORD`] ?? "Pass1234!Demo";
+    const configuredPassword = process.env[`SEED_PARTNER_${index}_PASSWORD`];
+    const password = configuredPassword || crypto.randomUUID();
     let user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
       await seedAuth.api.signUpEmail({ body: { name, email, password } });
       user = await prisma.user.findUniqueOrThrow({ where: { email } });
-      console.log(`Generated user ${email}`);
+      if (!configuredPassword) console.log(`Generated password for ${email}: ${password}`);
     }
     // Give user 3 SALES role to test sales role permissions, others PARTNER
     const role = index === 3 ? "SALES" : "PARTNER";
@@ -42,8 +43,8 @@ async function main() {
   });
   await prisma.counter.upsert({
     where: { name: "JB" },
-    update: {},
-    create: { name: "JB", value: 4 },
+    update: { value: 15 },
+    create: { name: "JB", value: 15 },
   });
 
   // Seed standard photobooth packages
@@ -189,61 +190,119 @@ async function main() {
     }
   }
 
-  // Preserve existing bookings, payments, expenses, capital logic
+  // Idempotent booking scenarios cover active, collection, and payment-edge cases.
   const nisha = await prisma.lead.findUniqueOrThrow({ where: { code: "ENQ-005" } });
+  const packageRows = await prisma.package.findMany({ where: { name: { in: ["Classic", "Grand", "Royal", "Custom"] } } });
+  const packageByName = new Map(packageRows.map((pkg) => [pkg.name, pkg]));
+
   const bookingRows = [
-    ["JB-001", nisha.id, "Nisha Gupta", "9876500005", "Patna", "Royal Garden", 7, "Premium Booth", 25000, 2000, 1000, BookingStatus.CONFIRMED, BookingType.PAID],
-    ["JB-002", null, "Acme Demo Co.", "9876500010", "Delhi NCR", "Expo Centre", 14, "Classic Booth", 18000, 3000, 0, BookingStatus.OPTION, BookingType.B2B],
-    ["JB-003", null, "Sample University", "9876500011", "Patna", "Campus Hall", -3, "Classic Booth", 12000, 0, 2000, BookingStatus.COMPLETED, BookingType.COLLAB],
-    ["JB-004", null, "Devika Rao", "9876500012", "Delhi NCR", "Green Hotel", 21, "Premium Booth", 30000, 2500, 0, BookingStatus.CONFIRMED, BookingType.PAID],
+    { code: "JB-001", leadId: nisha.id, clientName: "Nisha Gupta", phone: "9876500005", city: "Patna", venue: "Royal Garden", offset: 2, packageName: "Royal", basePrice: 28000, travelCharge: 2000, discount: 1000, status: BookingStatus.CONFIRMED, type: BookingType.PAID, payOnEvent: false },
+    { code: "JB-002", leadId: null, clientName: "Acme Demo Co.", phone: "9876500010", city: "Delhi NCR", venue: "Expo Centre", offset: 5, packageName: "Grand", basePrice: 20000, travelCharge: 3000, discount: 0, status: BookingStatus.OPTION, type: BookingType.B2B, payOnEvent: false },
+    { code: "JB-003", leadId: null, clientName: "Sample University", phone: "9876500011", city: "Patna", venue: "Campus Hall", offset: -3, packageName: "Classic", basePrice: 12000, travelCharge: 0, discount: 2000, status: BookingStatus.COMPLETED, type: BookingType.COLLAB, payOnEvent: false },
+    { code: "JB-004", leadId: null, clientName: "Devika Rao", phone: "9876500012", city: "Delhi NCR", venue: "Green Hotel", offset: 7, packageName: "Royal", basePrice: 30000, travelCharge: 2500, discount: 0, status: BookingStatus.CONFIRMED, type: BookingType.PAID, payOnEvent: false },
+    { code: "JB-005", leadId: null, clientName: "Mira Collective", phone: "9876500025", city: "Gaya", venue: "Riverside Lawn", offset: 1, packageName: "Grand", basePrice: 18000, travelCharge: 1000, discount: 0, status: BookingStatus.CONFIRMED, type: BookingType.PAID, payOnEvent: false },
+    { code: "JB-006", leadId: null, clientName: "Bodh Gaya Retreat", phone: "9876500010", city: "Bodh Gaya", venue: "Lotus Convention", offset: 6, packageName: "Royal", basePrice: 28000, travelCharge: 2000, discount: 0, status: BookingStatus.IN_PROGRESS, type: BookingType.PAID, payOnEvent: false },
+    { code: "JB-007", leadId: null, clientName: "Greenfield School", phone: "9876500026", city: "Patna", venue: "School Auditorium", offset: 12, packageName: "Classic", basePrice: 14000, travelCharge: 0, discount: 1000, status: BookingStatus.POSTPONED, type: BookingType.COLLAB, payOnEvent: true },
+    { code: "JB-008", leadId: null, clientName: "Aurora Events", phone: "9876500027", city: "Delhi NCR", venue: "Palm Hall", offset: 4, packageName: "Custom", basePrice: 22000, travelCharge: 3000, discount: 0, status: BookingStatus.CONFIRMED, type: BookingType.B2B, payOnEvent: false },
+    { code: "JB-009", leadId: null, clientName: "Roshni Kapoor", phone: "9876500028", city: "Gaya", venue: "Heritage Hall", offset: -12, packageName: "Classic", basePrice: 16000, travelCharge: 500, discount: 500, status: BookingStatus.COMPLETED, type: BookingType.PAID, payOnEvent: false },
+    { code: "JB-010", leadId: null, clientName: "City Sports Club", phone: "9876500029", city: "Patna", venue: "Club Arena", offset: -5, packageName: "Grand", basePrice: 20000, travelCharge: 1000, discount: 0, status: BookingStatus.COMPLETED, type: BookingType.PAID, payOnEvent: false },
+    { code: "JB-011", leadId: null, clientName: "Lakeview Banquet", phone: "9876500030", city: "Bodh Gaya", venue: "Lakeview", offset: 3, packageName: "Royal", basePrice: 26000, travelCharge: 2500, discount: 500, status: BookingStatus.CONFIRMED, type: BookingType.PAID, payOnEvent: false },
+    { code: "JB-012", leadId: null, clientName: "Northline Expo", phone: "9876500031", city: "Delhi NCR", venue: "North Expo", offset: 9, packageName: "Grand", basePrice: 21000, travelCharge: 4000, discount: 1000, status: BookingStatus.CANCELLED, type: BookingType.B2B, payOnEvent: false },
+    { code: "JB-013", leadId: null, clientName: "Ishan Malhotra", phone: "9876500032", city: "Patna", venue: "Starlight Hall", offset: 0, packageName: "Classic", basePrice: 16000, travelCharge: 0, discount: 0, status: BookingStatus.CONFIRMED, type: BookingType.PAID, payOnEvent: true },
+    { code: "JB-014", leadId: null, clientName: "Saanvi Foundation", phone: "9876500033", city: "Gaya", venue: "Foundation Campus", offset: 15, packageName: "Custom", basePrice: 19500, travelCharge: 1500, discount: 0, status: BookingStatus.CONFIRMED, type: BookingType.COLLAB, payOnEvent: false },
+    { code: "JB-015", leadId: null, clientName: "Veda Weddings", phone: "9876500034", city: "Delhi NCR", venue: "Veda Palace", offset: -20, packageName: "Royal", basePrice: 28000, travelCharge: 2500, discount: 0, status: BookingStatus.CANCELLED, type: BookingType.PAID, payOnEvent: false },
   ] as const;
+
   const bookings = [];
-  for (const [code, leadId, clientName, phone, city, venue, offset, packageName, basePrice, travelCharge, discount, status, type] of bookingRows) {
-    bookings.push(
-      await prisma.booking.upsert({
-        where: { code },
-        update: {},
-        create: {
-          code,
-          leadId,
-          clientName,
-          phone,
-          city,
-          venue,
-          eventDate: day(offset),
-          startTime: "18:00",
-          endTime: "22:00",
-          packageName,
-          basePrice,
-          travelCharge,
-          discount,
-          status,
-          type,
-          dayContact: "Sample Site Contact",
-        },
-      })
-    );
+  for (const row of bookingRows) {
+    const pkg = packageByName.get(row.packageName);
+    bookings.push(await prisma.booking.upsert({
+      where: { code: row.code },
+      update: {
+        leadId: row.leadId,
+        clientName: row.clientName,
+        phone: row.phone,
+        city: row.city,
+        venue: row.venue,
+        eventDate: day(row.offset),
+        startTime: "18:00",
+        endTime: "22:00",
+        packageId: pkg?.id ?? null,
+        packageName: row.packageName,
+        basePrice: row.basePrice,
+        travelCharge: row.travelCharge,
+        discount: row.discount,
+        status: row.status,
+        type: row.type,
+        payOnEvent: row.payOnEvent,
+        dayContact: "Seed day contact",
+      },
+      create: {
+        code: row.code,
+        leadId: row.leadId,
+        clientName: row.clientName,
+        phone: row.phone,
+        city: row.city,
+        venue: row.venue,
+        eventDate: day(row.offset),
+        startTime: "18:00",
+        endTime: "22:00",
+        packageId: pkg?.id ?? null,
+        packageName: row.packageName,
+        basePrice: row.basePrice,
+        travelCharge: row.travelCharge,
+        discount: row.discount,
+        status: row.status,
+        type: row.type,
+        payOnEvent: row.payOnEvent,
+        dayContact: "Seed day contact",
+      },
+    }));
   }
 
-  const payments = [
-    [bookings[0].id, 10000, PaymentKind.ADVANCE, PaymentMode.UPI],
-    [bookings[0].id, 16000, PaymentKind.FINAL, PaymentMode.BANK],
-    [bookings[2].id, 10000, PaymentKind.ADVANCE, PaymentMode.CASH],
-    [bookings[2].id, 1000, PaymentKind.REFUND, PaymentMode.UPI],
+  const paymentRefs = [
+    { booking: 0, reference: "SEED-JB001-ADVANCE", amount: 8000, kind: PaymentKind.ADVANCE, mode: PaymentMode.UPI },
+    { booking: 1, reference: "SEED-JB002-NO-PAYMENT", amount: 0, kind: PaymentKind.ADVANCE, mode: PaymentMode.UPI },
+    { booking: 2, reference: "SEED-JB003-FULL", amount: 10000, kind: PaymentKind.FINAL, mode: PaymentMode.BANK },
+    { booking: 3, reference: "SEED-JB004-OVERPAID", amount: 35000, kind: PaymentKind.FINAL, mode: PaymentMode.UPI },
+    { booking: 4, reference: "SEED-JB005-UNDERPAID", amount: 7000, kind: PaymentKind.ADVANCE, mode: PaymentMode.CASH },
+    { booking: 5, reference: "SEED-JB006-FULL", amount: 30000, kind: PaymentKind.FINAL, mode: PaymentMode.BANK },
+    { booking: 7, reference: "SEED-JB008-VOIDED", amount: 5000, kind: PaymentKind.PART, mode: PaymentMode.CASH },
+    { booking: 8, reference: "SEED-JB009-FULL", amount: 16000, kind: PaymentKind.FINAL, mode: PaymentMode.UPI },
+    { booking: 9, reference: "SEED-JB010-PART", amount: 12000, kind: PaymentKind.PART, mode: PaymentMode.BANK },
+    { booking: 10, reference: "SEED-JB011-ADVANCE", amount: 9000, kind: PaymentKind.ADVANCE, mode: PaymentMode.UPI },
+    { booking: 11, reference: "SEED-JB012-REFUND", amount: 6000, kind: PaymentKind.REFUND, mode: PaymentMode.UPI },
+    { booking: 12, reference: "SEED-JB013-PAY-ON-EVENT", amount: 0, kind: PaymentKind.FINAL, mode: PaymentMode.CASH },
+    { booking: 13, reference: "SEED-JB014-PART", amount: 5000, kind: PaymentKind.PART, mode: PaymentMode.CHEQUE },
   ] as const;
-  for (const [bookingId, amount, kind, mode] of payments) {
-    if (!(await prisma.payment.findFirst({ where: { bookingId, amount, kind } }))) {
+
+  for (const ref of paymentRefs) {
+    if (ref.amount <= 0) continue;
+    const existing = await prisma.payment.findFirst({ where: { reference: ref.reference } });
+    if (!existing) {
       await prisma.payment.create({
         data: {
-          bookingId,
-          amount,
-          kind,
-          mode,
+          bookingId: bookings[ref.booking].id,
+          amount: ref.amount,
+          kind: ref.kind,
+          mode: ref.mode,
           paidOn: day(-2),
           receivedBy: "Demo Partner",
+          reference: ref.reference,
         },
       });
     }
+  }
+
+  const voided = await prisma.payment.findFirst({ where: { reference: "SEED-JB008-VOIDED" } });
+  if (voided && !voided.voidedAt) {
+    await prisma.payment.update({
+      where: { id: voided.id },
+      data: {
+        voidedAt: new Date(),
+        voidReason: "Seeded duplicate entry for voided-payment verification",
+      },
+    });
   }
 
   const expenses = [
