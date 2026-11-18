@@ -10,6 +10,7 @@ import {
   LeadStatus,
   PaymentKind,
   PaymentMode,
+  PrintSize,
   PrismaClient,
 } from "../src/generated/prisma/client";
 import { seedAuth } from "../src/lib/seed-auth";
@@ -260,6 +261,10 @@ async function main() {
     }));
   }
 
+  await prisma.booking.update({ where: { code: "JB-003" }, data: { printSize: PrintSize.TWO_BY_SIX, printsUsed: 220 } });
+  await prisma.booking.update({ where: { code: "JB-009" }, data: { printSize: PrintSize.FOUR_BY_SIX, printsUsed: 180 } });
+  await prisma.booking.update({ where: { code: "JB-010" }, data: { printSize: PrintSize.TWO_BY_SIX, printsUsed: 120 } });
+
   await prisma.payment.deleteMany({
     where: {
       reference: null,
@@ -317,23 +322,66 @@ async function main() {
     });
   }
 
-  const expenses = [
-    [bookings[0].id, ExpenseCategory.OPERATOR_FEE, 3500],
-    [bookings[0].id, ExpenseCategory.TRANSPORT, 1200],
-    [bookings[2].id, ExpenseCategory.FOOD, 700],
-    [null, ExpenseCategory.SOFTWARE, 1500],
-    [null, ExpenseCategory.MARKETING, 4500],
-    [bookings[3].id, ExpenseCategory.CONSUMABLES, 900],
+  const expenseDefs: Array<{ bookingId: string | null; category: ExpenseCategory; amount: number; offset: number; paidBy: string; note: string }> = [];
+  const fullCostBookingIndexes = [0, 8, 9];
+  for (const bookingIndex of fullCostBookingIndexes) {
+    for (const [category, amount] of [
+      [ExpenseCategory.OPERATOR_FEE, 1500],
+      [ExpenseCategory.TRANSPORT, 2500],
+      [ExpenseCategory.FOOD, 800],
+      [ExpenseCategory.VENUE_CUT, 575],
+      [ExpenseCategory.CONSUMABLES, 1000],
+    ] as const) {
+      expenseDefs.push({
+        bookingId: bookings[bookingIndex].id,
+        category,
+        amount,
+        offset: -(bookingIndex + 3),
+        paidBy: "Demo Partner",
+        note: `SEED-FULL-COST-${bookingIndex + 1}-${category}`,
+      });
+    }
+  }
+  const generalCategories = [
+    ExpenseCategory.CARPENTRY, ExpenseCategory.EMI, ExpenseCategory.EQUIPMENT,
+    ExpenseCategory.SOFTWARE, ExpenseCategory.MARKETING, ExpenseCategory.ADMIN,
+    ExpenseCategory.OTHER, ExpenseCategory.TRANSPORT, ExpenseCategory.FOOD,
   ] as const;
-  for (const [bookingId, category, amount] of expenses) {
-    if (!(await prisma.expense.findFirst({ where: { bookingId, category, amount } }))) {
+  for (let index = 0; index < 25; index++) {
+    const category = generalCategories[index % generalCategories.length];
+    expenseDefs.push({
+      bookingId: index % 7 === 0 ? bookings[index % bookings.length].id : null,
+      category,
+      amount: 350 + ((index * 137) % 4200),
+      offset: -(index * 3),
+      paidBy: index % 2 === 0 ? "Demo Partner" : "Seed Operator",
+      note: `SEED-GENERAL-${index + 1}-${category}`,
+    });
+  }
+  expenseDefs.push({
+    bookingId: null,
+    category: ExpenseCategory.ADMIN,
+    amount: 250,
+    offset: 0,
+    paidBy: "Demo Partner",
+    note: "SEED-MONTH-END-19UTC",
+  });
+  for (let index = 0; index < expenseDefs.length; index++) {
+    const def = expenseDefs[index];
+    const spentOn = def.note === "SEED-MONTH-END-19UTC"
+      ? new Date("2026-11-30T19:00:00Z")
+      : day(def.offset);
+    if (!(await prisma.expense.findFirst({ where: { note: def.note } }))) {
       await prisma.expense.create({
         data: {
-          bookingId,
-          category,
-          amount,
-          spentOn: day(-1),
-          paidBy: "Demo Partner",
+          bookingId: def.bookingId,
+          category: def.category,
+          amount: def.amount,
+          spentOn,
+          paidBy: def.paidBy,
+          note: def.note,
+          voidedAt: index === 3 || index === 16 ? new Date() : null,
+          voidReason: index === 3 || index === 16 ? "Seeded void for verification" : null,
         },
       });
     }

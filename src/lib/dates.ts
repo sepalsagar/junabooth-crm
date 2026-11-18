@@ -83,3 +83,13 @@ export function parseISODateIST(dateStr: string): Date | null {
   const [year, month, day] = parts;
   return new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0) - IST_OFFSET_MS);
 }
+
+export function istMonthBounds(now: Date = new Date(), offset: number = 0) {
+  const parts = getISTParts(now);
+  const startIST = new Date(Date.UTC(parts.year, parts.month + offset, 1, 0, 0, 0, 0));
+  const endIST = new Date(Date.UTC(parts.year, parts.month + offset + 1, 0, 23, 59, 59, 999));
+  return {
+    start: new Date(startIST.getTime() - IST_OFFSET_MS),
+    end: new Date(endIST.getTime() - IST_OFFSET_MS),
+  };
+}

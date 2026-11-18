@@ -20,6 +20,9 @@ export type PaymentModeType = (typeof PAYMENT_MODES)[number];
 export const PAYMENT_KINDS = ["ADVANCE", "PART", "FINAL", "REFUND"] as const;
 export type PaymentKindType = (typeof PAYMENT_KINDS)[number];
 
+export const PRINT_SIZES = ["TWO_BY_SIX", "FOUR_BY_SIX"] as const;
+export type PrintSizeKind = (typeof PRINT_SIZES)[number];
+
 export const PAYMENT_STATUS_FILTERS = [
   "AWAITING_ADVANCE",
   "ADVANCE_PAID",
@@ -130,6 +133,8 @@ export const createBookingSchema = z.object({
   payOnEvent: z.boolean().default(false),
   dayContact: z.string().trim().optional(),
   notes: z.string().trim().optional(),
+  printSize: z.enum(PRINT_SIZES).optional(),
+  printsUsed: z.coerce.number().int().nonnegative().optional(),
 });
 
 export type CreateBookingInput = z.infer<typeof createBookingSchema>;
@@ -146,6 +151,8 @@ export const changeBookingStatusSchema = z.object({
   status: z.enum(BOOKING_STATUSES),
   newEventDate: z.preprocess(dateOrUndefined, z.date().optional()),
   reason: z.string().trim().optional(),
+  printSize: z.enum(PRINT_SIZES).optional(),
+  printsUsed: z.coerce.number().int().nonnegative().optional(),
 });
 
 export type ChangeBookingStatusInput = z.infer<typeof changeBookingStatusSchema>;

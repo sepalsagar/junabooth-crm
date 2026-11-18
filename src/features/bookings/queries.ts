@@ -11,6 +11,9 @@ import { buildBookingWhere, getAggregatedBookingIds } from "./filters";
 import { isBelowRate } from "./rules";
 import type { BookingFilters } from "./schema";
 import type { BookingStatus, Prisma } from "@/generated/prisma/client";
+import { requireUser } from "@/lib/auth-guards";
+import { can, type Role } from "@/lib/permissions";
+import { getBookingCosts } from "@/features/expenses/queries";
 
 export const BOOKINGS_PAGE_SIZE = 20;
 
@@ -143,6 +146,8 @@ export async function getBookings(filters: BookingFilters) {
 }
 
 export async function getBooking(code: string) {
+  const { user } = await requireUser();
+  const role = user.role as Role;
   const booking = await db.booking.findUnique({
     where: { code },
     include: {
@@ -189,7 +194,7 @@ export async function getBooking(code: string) {
   const status = paymentStatus(booking, booking.payments, booking.payOnEvent);
   const belowRate = isBelowRate(booking.basePrice, booking.package);
 
-  return {
+  const result = {
     ...booking,
     totalAmount,
     received,
@@ -197,6 +202,12 @@ export async function getBooking(code: string) {
     paymentStatus: status,
     isBelowRate: belowRate,
   };
+
+  if (can(role, "expenses")) {
+    const expenses = await getBookingCosts(booking.id);
+    return { ...result, expenses };
+  }
+  return result;
 }
 
 export async function getActiveBookingFinancials() {

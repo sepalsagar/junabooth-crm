@@ -208,6 +208,8 @@ export async function createBooking(
         payOnEvent: data.payOnEvent,
         dayContact: data.dayContact,
         notes: data.notes,
+        printSize: data.printSize,
+        printsUsed: data.printsUsed,
       },
     });
 
@@ -297,6 +299,8 @@ export async function updateBooking(
         payOnEvent: data.payOnEvent,
         dayContact: data.dayContact,
         notes: data.notes,
+        printSize: data.printSize,
+        printsUsed: data.printsUsed,
       },
     });
 
@@ -401,6 +405,8 @@ export async function changeBookingStatus(
       data: {
         status: data.status,
         eventDate: newDate,
+        printSize: data.status === "COMPLETED" ? data.printSize : existing.printSize,
+        printsUsed: data.status === "COMPLETED" ? data.printsUsed : existing.printsUsed,
       },
     });
 

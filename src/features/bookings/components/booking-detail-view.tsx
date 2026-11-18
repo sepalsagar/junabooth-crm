@@ -6,6 +6,7 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { ArrowLeftIcon, MessageSquareIcon, PhoneIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,7 +26,8 @@ import { telLink, whatsappLink } from "@/features/leads/phone";
 import type { getBooking } from "../queries";
 import { cancelBooking, changeBookingStatus, recordPayment, updateBooking, voidPayment } from "../actions";
 import { ALLOWED_TRANSITIONS } from "../rules";
-import { BOOKING_TYPES, PAYMENT_KINDS, PAYMENT_MODES, type BookingTypeKind, type PaymentKindType, type PaymentModeType } from "../schema";
+import { BOOKING_TYPES, PAYMENT_KINDS, PAYMENT_MODES, PRINT_SIZES, type BookingTypeKind, type PaymentKindType, type PaymentModeType } from "../schema";
+import { eventProfit } from "@/features/expenses/profit";
 import { BookingStatusBadge } from "./booking-status-badge";
 import { PaymentStatusBadge } from "./payment-status-badge";
 
@@ -102,6 +104,8 @@ export function BookingDetailView({
         status: String(form.get("status")) as typeof booking.status,
         newEventDate: String(form.get("newEventDate") || "") || undefined,
         reason: String(form.get("reason") || "") || undefined,
+        printSize: String(form.get("printSize") || "") as "TWO_BY_SIX" | "FOUR_BY_SIX" | undefined,
+        printsUsed: String(form.get("printsUsed") || "") ? Number(form.get("printsUsed")) : undefined,
       }),
       "Booking status updated"
     );
@@ -167,6 +171,10 @@ export function BookingDetailView({
                 <div className="space-y-1"><Label htmlFor="status">New status</Label><select id="status" name="status" className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs" required><option value="">Select status</option>{ALLOWED_TRANSITIONS[booking.status].map((status) => <option key={status} value={status}>{status}</option>)}</select></div>
                 {booking.status === "POSTPONED" && <div className="space-y-1"><Label htmlFor="newEventDate">New event date</Label><Input id="newEventDate" name="newEventDate" type="date" /></div>}
                 <div className="space-y-1"><Label htmlFor="reason">Reason</Label><Input id="reason" name="reason" /></div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1"><Label htmlFor="printSize">Print size (completed)</Label><select id="printSize" name="printSize" className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs"><option value="">None</option>{PRINT_SIZES.map((size) => <option key={size} value={size}>{size.replaceAll("_", " ")}</option>)}</select></div>
+                  <div className="space-y-1"><Label htmlFor="printsUsed">Prints used</Label><Input id="printsUsed" name="printsUsed" type="number" min="0" /></div>
+                </div>
                 <DialogFooter><Button type="button" variant="outline" onClick={() => setStatusOpen(false)}>Close</Button><Button type="submit" disabled={pending}>Save status</Button></DialogFooter>
               </form>
             </DialogContent>
@@ -199,6 +207,36 @@ export function BookingDetailView({
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[["Total", booking.totalAmount], ["Received", booking.received], ["Balance", booking.balance], ["Event date", formatDateIST(booking.eventDate)]].map(([label, value]) => <Card key={String(label)}><CardHeader className="pb-2"><CardTitle className="text-xs text-muted-foreground">{label}</CardTitle></CardHeader><CardContent className="text-xl font-semibold">{typeof value === "number" ? inr(value) : value}</CardContent></Card>)}
       </section>
+
+      {role === "PARTNER" && "expenses" in booking && (() => {
+        const profit = eventProfit(
+          { basePrice: booking.basePrice, travelCharge: booking.travelCharge, discount: booking.discount, status: booking.status, printSize: booking.printSize, printsUsed: booking.printsUsed },
+          booking.expenses,
+          booking.payments
+        );
+        return (
+          <Card>
+            <CardHeader><CardTitle>Costs and profit</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {[["Billed", profit.revenue], ["Costs", profit.directCosts], ["Profit", profit.profit], ["Margin", profit.margin === null ? "n/a" : `${profit.margin}%`]].map(([label, value]) => <div key={String(label)} className="rounded-md border p-3"><p className="text-xs text-muted-foreground">{label}</p><p className="mt-1 font-semibold">{typeof value === "number" ? inr(value) : value}</p></div>)}
+              </div>
+              {profit.consumablesEstimate !== null && <p className="text-sm">Consumables estimate: <strong>{inr(profit.consumablesEstimate)}</strong></p>}
+              {profit.costsIncomplete && <Badge variant="destructive">Costs incomplete</Badge>}
+              <div className="divide-y">
+                {booking.expenses.map((expense) => (
+                  <div key={expense.id} className="flex items-center justify-between py-2">
+                    <div><p className="text-sm">{expense.category.replaceAll("_", " ")}</p><p className="text-xs text-muted-foreground">{expense.note || formatDateIST(expense.spentOn)}</p></div>
+                    <div className="flex items-center gap-2"><span className={expense.voidedAt ? "line-through" : "font-semibold"}>{inr(expense.amount)}</span>{expense.receiptUrl && <a href={expense.receiptUrl} target="_blank" rel="noreferrer"><img src={expense.receiptUrl} alt="Receipt" className="h-10 w-10 rounded object-cover" /></a>}</div>
+                  </div>
+                ))}
+                {booking.expenses.length === 0 && <p className="py-2 text-sm text-muted-foreground">No linked costs.</p>}
+              </div>
+              <Link href={`/expenditure?bookingId=${booking.id}`}><Button variant="outline">Add cost</Button></Link>
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
