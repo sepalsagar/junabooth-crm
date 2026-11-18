@@ -84,9 +84,16 @@ enum ExpenseCategory {
   CONSUMABLES
   EQUIPMENT
   SOFTWARE
+  CARPENTRY
+  EMI
   MARKETING
   ADMIN
   OTHER
+}
+
+enum PrintSize {
+  TWO_BY_SIX
+  FOUR_BY_SIX
 }
 
 enum CapitalKind {
@@ -178,6 +185,8 @@ model Booking {
   type         BookingType       @default(PAID)
   status       BookingStatus     @default(CONFIRMED)
   payOnEvent   Boolean           @default(false)
+  printSize    PrintSize?
+  printsUsed   Int?
   dayContact   String?
   notes        String?
   payments     Payment[]
@@ -230,21 +239,26 @@ model Payment {
 }
 
 model Expense {
-  id         String          @id @default(cuid())
-  bookingId  String?
-  booking    Booking?        @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-  category   ExpenseCategory
-  amount     Int
-  spentOn    DateTime
-  paidBy     String?
-  note       String?
-  receiptUrl String?
-  createdAt  DateTime        @default(now())
-  updatedAt  DateTime        @updatedAt
+  id          String          @id @default(cuid())
+  bookingId   String?
+  booking     Booking?        @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  category    ExpenseCategory
+  amount      Int
+  spentOn     DateTime
+  paidBy      String?
+  note        String?
+  receiptPath String?
+  voidedAt    DateTime?
+  voidedById  String?
+  voidedBy    User?           @relation("ExpenseVoidedBy", fields: [voidedById], references: [id], onDelete: SetNull)
+  voidReason  String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 
   @@index([bookingId])
   @@index([category])
   @@index([spentOn])
+  @@index([voidedAt])
 }
 
 model CapitalEntry {
@@ -283,6 +297,7 @@ model User {
   leadActivities    LeadActivity[]
   bookingActivities BookingActivity[]
   voidedPayments    Payment[]         @relation("PaymentVoidedBy")
+  voidedExpenses    Expense[]         @relation("ExpenseVoidedBy")
 
   @@unique([email])
   @@map("user")
