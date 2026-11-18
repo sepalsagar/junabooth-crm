@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -227,7 +228,7 @@ export function BookingDetailView({
                 {booking.expenses.map((expense) => (
                   <div key={expense.id} className="flex items-center justify-between py-2">
                     <div><p className="text-sm">{expense.category.replaceAll("_", " ")}</p><p className="text-xs text-muted-foreground">{expense.note || formatDateIST(expense.spentOn)}</p></div>
-                    <div className="flex items-center gap-2"><span className={expense.voidedAt ? "line-through" : "font-semibold"}>{inr(expense.amount)}</span>{expense.receiptUrl && <a href={expense.receiptUrl} target="_blank" rel="noreferrer"><img src={expense.receiptUrl} alt="Receipt" className="h-10 w-10 rounded object-cover" /></a>}</div>
+                    <div className="flex items-center gap-2"><span className={expense.voidedAt ? "line-through" : "font-semibold"}>{inr(expense.amount)}</span>{expense.receiptUrl && <a href={expense.receiptUrl} target="_blank" rel="noreferrer"><Image src={expense.receiptUrl} alt="Receipt" width={40} height={40} unoptimized className="h-10 w-10 rounded object-cover" /></a>}</div>
                   </div>
                 ))}
                 {booking.expenses.length === 0 && <p className="py-2 text-sm text-muted-foreground">No linked costs.</p>}

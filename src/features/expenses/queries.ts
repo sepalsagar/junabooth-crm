@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/auth-guards";
-import { istMonthBounds } from "@/lib/dates";
+import { istMonthBounds, startOfTodayIST } from "@/lib/dates";
 import { CATEGORY_GROUP, type ExpenseGroup } from "./groups";
 import { buildExpenseWhere, type ExpenseFilters } from "./filters";
 import type { ExpenseCategory, Prisma } from "@/generated/prisma/client";
@@ -99,13 +99,13 @@ export async function getBookingCosts(bookingId: string) {
 export async function getExpenseFormOptions() {
   await requireRole(["PARTNER"]);
   const now = new Date();
-  const istStart = new Date(now.getTime());
-  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const todayStart = startOfTodayIST(now);
+  const afterTomorrow = new Date(todayStart.getTime() + 2 * 24 * 60 * 60 * 1000);
   const [bookings, paidByRows] = await Promise.all([
     db.booking.findMany({
       where: {
         status: { in: ["CONFIRMED", "IN_PROGRESS", "COMPLETED"] },
-        eventDate: { gte: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 1)), lte: tomorrow },
+        eventDate: { gte: todayStart, lte: afterTomorrow },
       },
       orderBy: { eventDate: "asc" },
       take: 30,
