@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "./status-badge";
 import { LeadStatusDialog } from "./lead-status-dialog";
+import { ConvertLeadSheet } from "@/features/bookings/components/convert-lead-sheet";
 import { addNote, updateLead } from "../actions";
 import { telLink, whatsappLink } from "../phone";
 import { formatDateIST, formatDateTimeIST, toISODateStringIST } from "@/lib/dates";
@@ -69,9 +70,10 @@ interface LeadDetailProps {
     }[];
   };
   users: { id: string; name: string; role: string }[];
+  packages?: { id: string; name: string; price: number; hours: number }[];
 }
 
-export function LeadDetailView({ lead, users }: LeadDetailProps) {
+export function LeadDetailView({ lead, users, packages = [] }: LeadDetailProps) {
   const router = useRouter();
   const [isUpdating, startUpdateTransition] = useTransition();
   const [isAddingNote, startNoteTransition] = useTransition();
@@ -205,6 +207,9 @@ export function LeadDetailView({ lead, users }: LeadDetailProps) {
             currentFollowUp={lead.nextFollowUp}
             currentLostReason={lead.lostReason}
           />
+          {!lead.booking && lead.status !== "WON" && (
+            <ConvertLeadSheet lead={lead} packages={packages} />
+          )}
         </div>
       </div>
 

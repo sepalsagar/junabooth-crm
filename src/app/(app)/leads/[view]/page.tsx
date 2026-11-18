@@ -6,6 +6,7 @@ import { LeadFilters } from "@/features/leads/components/lead-filters";
 import { LeadsTable } from "@/features/leads/components/leads-table";
 import { QuickAddLeadSheet } from "@/features/leads/components/quick-add-lead-sheet";
 import { LeadDetailView } from "@/features/leads/components/lead-detail-view";
+import { getBookingFacets } from "@/features/bookings/queries";
 import type { LeadStatusType } from "@/features/leads/schema";
 
 const VIEW_CONFIG: Record<
@@ -102,6 +103,7 @@ export default async function LeadViewOrDetailPage({
   }
 
   const facets = await getLeadFacets();
+  const packages = await getBookingFacets();
 
-  return <LeadDetailView lead={lead} users={facets.users} />;
+  return <LeadDetailView lead={lead} users={facets.users} packages={packages.packages} />;
 }
