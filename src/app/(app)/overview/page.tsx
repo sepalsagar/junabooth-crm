@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { balanceDue } from "@/lib/calc";
 import { db } from "@/lib/db";
 import { inr } from "@/lib/format";
 import { formatDateIST, startOfTodayIST } from "@/lib/dates";
@@ -9,34 +8,28 @@ import { getFollowUpsDue } from "@/features/leads/queries";
 import { StatusBadge } from "@/features/leads/components/status-badge";
 import { telLink, whatsappLink } from "@/features/leads/phone";
 import { ClockAlertIcon, MessageSquareIcon, PhoneIcon } from "lucide-react";
+import { getOverviewMoney } from "@/features/bookings/queries";
 
 export default async function OverviewPage() {
   const now = new Date();
   const startToday = startOfTodayIST(now);
 
-  const [leads, bookings, payments, expenses, rows, followUps] = await Promise.all([
+  const [leads, bookings, payments, expenses, followUps, money] = await Promise.all([
     db.lead.count(),
     db.booking.count(),
     db.payment.count(),
     db.expense.count(),
-    db.booking.findMany({
-      select: {
-        basePrice: true,
-        travelCharge: true,
-        discount: true,
-        payments: { select: { amount: true, kind: true } },
-      },
-    }),
     getFollowUpsDue(now),
+    getOverviewMoney(),
   ]);
 
-  const due = rows.reduce((sum, booking) => sum + balanceDue(booking, booking.payments), 0);
   const metrics = [
     ["Leads", leads],
     ["Bookings", bookings],
     ["Payments", payments],
     ["Expenses", expenses],
-    ["Balance due", inr(due)],
+    ["Balance to collect", inr(money.balanceToCollect)],
+    ["Received to date", inr(money.receivedToDate)],
   ];
 
   return (
@@ -44,7 +37,7 @@ export default async function OverviewPage() {
       <h1 className="text-3xl font-bold">Overview</h1>
 
       {/* Metrics Row */}
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
         {metrics.map(([label, value]) => (
           <Card key={label}>
             <CardHeader className="pb-2">

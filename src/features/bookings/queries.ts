@@ -6,7 +6,7 @@ import {
   paymentStatus,
   type PaymentStatus,
 } from "@/lib/calc";
-import { endOfTodayIST, endOfWeekIST, startOfTodayIST } from "@/lib/dates";
+import { endOfWeekIST, startOfTodayIST } from "@/lib/dates";
 import { buildBookingWhere, getAggregatedBookingIds } from "./filters";
 import { isBelowRate } from "./rules";
 import type { BookingFilters } from "./schema";
@@ -199,6 +199,31 @@ export async function getBooking(code: string) {
   };
 }
 
+export async function getActiveBookingFinancials() {
+  return db.booking.findMany({
+    where: { status: { in: ACTIVE_BOOKING_STATUSES } },
+    orderBy: { eventDate: "asc" },
+    select: {
+      id: true,
+      code: true,
+      clientName: true,
+      phone: true,
+      city: true,
+      venue: true,
+      eventDate: true,
+      status: true,
+      type: true,
+      payOnEvent: true,
+      basePrice: true,
+      travelCharge: true,
+      discount: true,
+      payments: {
+        select: { amount: true, kind: true, voidedAt: true },
+      },
+    },
+  });
+}
+
 export interface CollectionItem {
   id: string;
   code: string;
@@ -221,38 +246,9 @@ export async function getCollections(view: "week" | "overdue"): Promise<Collecti
   const now = new Date();
   const startToday = startOfTodayIST(now);
   const endWeek = endOfWeekIST(now);
+  const activeRows = await getActiveBookingFinancials();
 
-  // Fetch all active bookings with live payments
-  const rows = await db.booking.findMany({
-    where: {
-      status: { in: ACTIVE_BOOKING_STATUSES },
-    },
-    orderBy: { eventDate: "asc" },
-    select: {
-      id: true,
-      code: true,
-      clientName: true,
-      phone: true,
-      city: true,
-      venue: true,
-      eventDate: true,
-      status: true,
-      type: true,
-      payOnEvent: true,
-      basePrice: true,
-      travelCharge: true,
-      discount: true,
-      payments: {
-        select: {
-          amount: true,
-          kind: true,
-          voidedAt: true,
-        },
-      },
-    },
-  });
-
-  const activeWithBalance = rows
+  const activeWithBalance = activeRows
     .map((b) => {
       const received = amountReceived(b.payments);
       const balance = balanceDue(b, b.payments);
@@ -301,24 +297,7 @@ export async function getOverviewMoney(): Promise<{
   balanceToCollect: number;
   receivedToDate: number;
 }> {
-  // Uses the same active booking definition
-  const rows = await db.booking.findMany({
-    where: {
-      status: { in: ACTIVE_BOOKING_STATUSES },
-    },
-    select: {
-      basePrice: true,
-      travelCharge: true,
-      discount: true,
-      payments: {
-        select: {
-          amount: true,
-          kind: true,
-          voidedAt: true,
-        },
-      },
-    },
-  });
+  const rows = await getActiveBookingFinancials();
 
   let balanceToCollect = 0;
   let receivedToDate = 0;
