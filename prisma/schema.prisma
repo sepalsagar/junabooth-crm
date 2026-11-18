@@ -1,0 +1,195 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUOTED
+  FOLLOW_UP
+  WON
+  LOST
+  POSTPONED
+}
+
+enum LeadSource {
+  INSTAGRAM
+  META_AD
+  BNI
+  PSC
+  WEBSITE
+  REFERRAL
+  B2B_PARTNER
+  PHONE
+  TR_EVENT
+  OTHER
+}
+
+enum BookingStatus {
+  OPTION
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  POSTPONED
+}
+
+enum BookingType {
+  PAID
+  COLLAB
+  B2B
+}
+
+enum PaymentKind {
+  ADVANCE
+  PART
+  FINAL
+  REFUND
+}
+
+enum PaymentMode {
+  UPI
+  BANK
+  CASH
+  CHEQUE
+}
+
+enum ExpenseCategory {
+  OPERATOR_FEE
+  TRANSPORT
+  FOOD
+  VENUE_CUT
+  CONSUMABLES
+  EQUIPMENT
+  SOFTWARE
+  MARKETING
+  ADMIN
+  OTHER
+}
+
+enum CapitalKind {
+  INJECTED
+  WITHDRAWN
+}
+
+model Lead {
+  id            String     @id @default(cuid())
+  code          String     @unique
+  clientName    String
+  phone         String
+  whatsapp      String?
+  city          String?
+  eventType     String?
+  targetDate    DateTime?
+  venue         String?
+  source        LeadSource?
+  quotedAmount  Int?
+  packageName   String?
+  status        LeadStatus @default(NEW)
+  nextFollowUp  DateTime?
+  lostReason    String?
+  notes         String?
+  ownerId       String?
+  booking       Booking?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([status])
+  @@index([city])
+  @@index([source])
+  @@index([targetDate])
+  @@index([nextFollowUp])
+  @@index([eventType])
+}
+
+model Booking {
+  id           String        @id @default(cuid())
+  code         String        @unique
+  leadId       String?       @unique
+  lead         Lead?         @relation(fields: [leadId], references: [id])
+  clientName   String
+  phone        String
+  city         String?
+  venue        String?
+  mapLink      String?
+  eventDate    DateTime
+  startTime    String?
+  endTime      String?
+  packageName  String
+  basePrice    Int
+  travelCharge Int           @default(0)
+  discount     Int           @default(0)
+  type         BookingType   @default(PAID)
+  status       BookingStatus @default(CONFIRMED)
+  dayContact   String?
+  notes        String?
+  payments     Payment[]
+  expenses     Expense[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([status])
+  @@index([city])
+  @@index([eventDate])
+  @@index([type])
+}
+
+model Payment {
+  id         String      @id @default(cuid())
+  bookingId  String
+  booking    Booking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  amount     Int
+  paidOn     DateTime
+  kind       PaymentKind
+  mode       PaymentMode
+  receivedBy String?
+  reference  String?
+  note       String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@index([bookingId])
+  @@index([paidOn])
+}
+
+model Expense {
+  id        String          @id @default(cuid())
+  bookingId String?
+  booking   Booking?        @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  category  ExpenseCategory
+  amount    Int
+  spentOn   DateTime
+  paidBy    String?
+  note      String?
+  receiptUrl String?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([bookingId])
+  @@index([category])
+  @@index([spentOn])
+}
+
+model CapitalEntry {
+  id          String       @id @default(cuid())
+  partnerName String
+  kind        CapitalKind
+  amount      Int
+  date        DateTime
+  mode        PaymentMode?
+  note        String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Counter {
+  name      String   @id
+  value     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
