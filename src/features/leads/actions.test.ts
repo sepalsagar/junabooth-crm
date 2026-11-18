@@ -86,10 +86,11 @@ describe("Leads Server Actions", () => {
 
   it("warns about duplicate phone number without failing createLead", async () => {
     const { db } = await import("@/lib/db");
-    (db.lead.findFirst as any).mockResolvedValueOnce({
+    vi.mocked(db.lead.findFirst).mockResolvedValueOnce({
+      id: "lead_001",
       code: "ENQ-001",
       clientName: "Existing Client",
-    });
+    } as unknown as Awaited<ReturnType<typeof db.lead.findFirst>>);
 
     const res = await createLead({
       clientName: "New Client",

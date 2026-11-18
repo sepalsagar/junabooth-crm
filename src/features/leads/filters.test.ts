@@ -20,7 +20,7 @@ describe("Lead Filters & Where Clause Builder", () => {
     });
 
     expect(where).toHaveProperty("OR");
-    const orClauses = (where as any).OR;
+    const orClauses = (where as { OR?: unknown[] }).OR;
     expect(orClauses).toEqual(
       expect.arrayContaining([
         { clientName: { contains: "Aarav", mode: "insensitive" } },
@@ -43,15 +43,15 @@ describe("Lead Filters & Where Clause Builder", () => {
     );
 
     expect(where).toHaveProperty("AND");
-    const andClauses = (where as any).AND;
+    const andClauses = (where as { AND?: Array<Record<string, unknown>> }).AND ?? [];
 
     // Must have nextFollowUp lt startOfTodayIST and status notIn WON/LOST
-    const nextFollowUpClause = andClauses.find((c: any) => c.nextFollowUp);
+    const nextFollowUpClause = andClauses.find((c) => "nextFollowUp" in c);
     expect(nextFollowUpClause).toBeDefined();
-    expect(nextFollowUpClause.nextFollowUp).toHaveProperty("lt");
+    expect(nextFollowUpClause?.nextFollowUp).toHaveProperty("lt");
 
-    const statusClause = andClauses.find((c: any) => c.status);
-    expect(statusClause.status).toEqual({ notIn: ["WON", "LOST"] });
+    const statusClause = andClauses.find((c) => "status" in c);
+    expect(statusClause?.status).toEqual({ notIn: ["WON", "LOST"] });
   });
 
   it("filters status and overdue combined without including WON/LOST", () => {
@@ -66,10 +66,10 @@ describe("Lead Filters & Where Clause Builder", () => {
       now
     );
 
-    const andClauses = (where as any).AND;
-    const statusClause = andClauses.find((c: any) => c.status);
+    const andClauses = (where as { AND?: Array<Record<string, unknown>> }).AND ?? [];
+    const statusClause = andClauses.find((c) => "status" in c);
     // WON should be filtered out
-    expect(statusClause.status).toEqual({ in: ["NEW", "FOLLOW_UP"] });
+    expect(statusClause?.status).toEqual({ in: ["NEW", "FOLLOW_UP"] });
   });
 
   it("resolves owner='me' to currentUserId", () => {
@@ -84,6 +84,6 @@ describe("Lead Filters & Where Clause Builder", () => {
       "user_123"
     );
 
-    expect((where as any).ownerId).toBe("user_123");
+    expect((where as { ownerId?: string }).ownerId).toBe("user_123");
   });
 });

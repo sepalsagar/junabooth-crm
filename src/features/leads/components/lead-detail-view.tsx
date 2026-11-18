@@ -18,12 +18,9 @@ import { formatDateIST, formatDateTimeIST, toISODateStringIST } from "@/lib/date
 import { inr } from "@/lib/format";
 import {
   ArrowLeftIcon,
-  CalendarIcon,
-  ClockAlertIcon,
   MessageSquareIcon,
   PhoneIcon,
   SendIcon,
-  UserIcon,
 } from "lucide-react";
 import { LEAD_SOURCES, type LeadSourceType, type LeadStatusType } from "../schema";
 

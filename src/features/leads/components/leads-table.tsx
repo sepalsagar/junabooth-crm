@@ -20,7 +20,6 @@ import {
   ClockAlertIcon,
   MapPinIcon,
   PhoneIcon,
-  UserIcon,
 } from "lucide-react";
 import type { LeadSourceType, LeadStatusType } from "../schema";
 

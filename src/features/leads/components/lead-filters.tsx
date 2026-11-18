@@ -38,14 +38,16 @@ export function LeadFilters({ facets, totalCount }: LeadFiltersProps) {
   const [isPending, startTransition] = useTransition();
 
   // Search input state for debouncing
-  const initialQ = searchParams.get("q") ?? "";
-  const [searchVal, setSearchVal] = useState(initialQ);
+  const urlQ = searchParams.get("q") ?? "";
+  const [searchVal, setSearchVal] = useState(urlQ);
+  const [prevUrlQ, setPrevUrlQ] = useState(urlQ);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
 
-  // Sync internal search input when URL changes externally
-  useEffect(() => {
-    setSearchVal(searchParams.get("q") ?? "");
-  }, [searchParams]);
+  // Sync internal search input during render when URL changes externally
+  if (urlQ !== prevUrlQ) {
+    setPrevUrlQ(urlQ);
+    setSearchVal(urlQ);
+  }
 
   // Push new query params
   const updateFilters = useCallback(
