@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -77,27 +78,34 @@ enum CapitalKind {
   WITHDRAWN
 }
 
+enum UserRole {
+  PARTNER
+  SALES
+  OPERATOR
+}
+
 model Lead {
-  id            String     @id @default(cuid())
-  code          String     @unique
-  clientName    String
-  phone         String
-  whatsapp      String?
-  city          String?
-  eventType     String?
-  targetDate    DateTime?
-  venue         String?
-  source        LeadSource?
-  quotedAmount  Int?
-  packageName   String?
-  status        LeadStatus @default(NEW)
-  nextFollowUp  DateTime?
-  lostReason    String?
-  notes         String?
-  ownerId       String?
-  booking       Booking?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  id           String      @id @default(cuid())
+  code         String      @unique
+  clientName   String
+  phone        String
+  whatsapp     String?
+  city         String?
+  eventType    String?
+  targetDate   DateTime?
+  venue        String?
+  source       LeadSource?
+  quotedAmount Int?
+  packageName  String?
+  status       LeadStatus  @default(NEW)
+  nextFollowUp DateTime?
+  lostReason   String?
+  notes        String?
+  ownerId      String?
+  owner        User?       @relation("LeadOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  booking      Booking?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
   @@index([status])
   @@index([city])
@@ -158,17 +166,17 @@ model Payment {
 }
 
 model Expense {
-  id        String          @id @default(cuid())
-  bookingId String?
-  booking   Booking?        @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-  category  ExpenseCategory
-  amount    Int
-  spentOn   DateTime
-  paidBy    String?
-  note      String?
+  id         String          @id @default(cuid())
+  bookingId  String?
+  booking    Booking?        @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  category   ExpenseCategory
+  amount     Int
+  spentOn    DateTime
+  paidBy     String?
+  note       String?
   receiptUrl String?
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
 
   @@index([bookingId])
   @@index([category])
@@ -177,7 +185,8 @@ model Expense {
 
 model CapitalEntry {
   id          String       @id @default(cuid())
-  partnerName String
+  partnerId   String
+  partner     User         @relation("CapitalPartner", fields: [partnerId], references: [id], onDelete: Restrict)
   kind        CapitalKind
   amount      Int
   date        DateTime
@@ -192,4 +201,70 @@ model Counter {
   value     Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  role          UserRole  @default(PARTNER)
+  sessions      Session[]
+  accounts      Account[]
+  ownedLeads    Lead[]    @relation("LeadOwner")
+  capitalEntries CapitalEntry[] @relation("CapitalPartner")
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
 }

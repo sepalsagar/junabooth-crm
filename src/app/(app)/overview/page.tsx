@@ -1,0 +1,5 @@
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { balanceDue } from "@/lib/calc";
+import { db } from "@/lib/db";
+import { inr } from "@/lib/format";
+export default async function OverviewPage() { const [leads, bookings, payments, expenses, rows] = await Promise.all([db.lead.count(), db.booking.count(), db.payment.count(), db.expense.count(), db.booking.findMany({ select: { basePrice: true, travelCharge: true, discount: true, payments: { select: { amount: true, kind: true } } } })]); const due = rows.reduce((sum, booking) => sum + balanceDue(booking, booking.payments), 0); const metrics = [["Leads", leads], ["Bookings", bookings], ["Payments", payments], ["Expenses", expenses], ["Balance due", inr(due)]]; return <><h1 className="text-3xl font-bold">Overview</h1><section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">{metrics.map(([label, value]) => <Card key={label}><CardHeader><CardDescription>{label}</CardDescription><CardTitle className="text-2xl">{value}</CardTitle></CardHeader><CardContent>Live database total</CardContent></Card>)}</section></>; }

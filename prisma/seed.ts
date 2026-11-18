@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { BookingStatus, BookingType, CapitalKind, ExpenseCategory, LeadSource, LeadStatus, PaymentKind, PaymentMode, PrismaClient } from "../src/generated/prisma/client";
+import { seedAuth } from "../src/lib/seed-auth";
 
 const connectionString = process.env.DIRECT_URL;
 if (!connectionString) throw new Error("DIRECT_URL is required to seed the database.");
@@ -8,6 +9,18 @@ const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString }) })
 const day = (offset: number) => new Date(Date.now() + offset * 86_400_000);
 
 async function main() {
+  const partners = await Promise.all([1, 2, 3, 4].map(async (index) => {
+    const name = process.env[`SEED_PARTNER_${index}_NAME`] ?? `Demo Partner ${index}`;
+    const email = process.env[`SEED_PARTNER_${index}_EMAIL`] ?? `partner${index}@example.test`;
+    const password = process.env[`SEED_PARTNER_${index}_PASSWORD`] ?? crypto.randomUUID();
+    let user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      await seedAuth.api.signUpEmail({ body: { name, email, password } });
+      user = await prisma.user.findUniqueOrThrow({ where: { email } });
+      console.log(`Generated password for ${email}: ${password}`);
+    }
+    return prisma.user.update({ where: { id: user.id }, data: { role: "PARTNER" } });
+  }));
   await prisma.counter.upsert({ where: { name: "ENQ" }, update: {}, create: { name: "ENQ", value: 8 } });
   await prisma.counter.upsert({ where: { name: "JB" }, update: {}, create: { name: "JB", value: 4 } });
   const leadRows = [
@@ -20,7 +33,7 @@ async function main() {
     ["ENQ-007", "Priya Das", "9876500007", "Patna", "Anniversary", LeadSource.PHONE, LeadStatus.POSTPONED],
     ["ENQ-008", "Rohan Batra", "9876500008", "Delhi NCR", "Product launch", LeadSource.B2B_PARTNER, LeadStatus.FOLLOW_UP],
   ] as const;
-  for (const [code, clientName, phone, city, eventType, source, status] of leadRows) await prisma.lead.upsert({ where: { code }, update: {}, create: { code, clientName, phone, whatsapp: phone, city, eventType, source, status, targetDate: day(10), nextFollowUp: status === LeadStatus.FOLLOW_UP ? day(-2) : null, quotedAmount: 20000, packageName: "Classic Booth", venue: "Sample Venue" } });
+  for (const [code, clientName, phone, city, eventType, source, status] of leadRows) await prisma.lead.upsert({ where: { code }, update: { ownerId: partners[0].id }, create: { code, clientName, phone, whatsapp: phone, city, eventType, source, status, ownerId: partners[0].id, targetDate: day(10), nextFollowUp: status === LeadStatus.FOLLOW_UP ? day(-2) : null, quotedAmount: 20000, packageName: "Classic Booth", venue: "Sample Venue" } });
   const nisha = await prisma.lead.findUniqueOrThrow({ where: { code: "ENQ-005" } });
   const bookingRows = [
     ["JB-001", nisha.id, "Nisha Gupta", "9876500005", "Patna", "Royal Garden", 7, "Premium Booth", 25000, 2000, 1000, BookingStatus.CONFIRMED, BookingType.PAID],
@@ -34,7 +47,7 @@ async function main() {
   for (const [bookingId, amount, kind, mode] of payments) if (!await prisma.payment.findFirst({ where: { bookingId, amount, kind } })) await prisma.payment.create({ data: { bookingId, amount, kind, mode, paidOn: day(-2), receivedBy: "Demo Partner" } });
   const expenses = [[bookings[0].id, ExpenseCategory.OPERATOR_FEE, 3500], [bookings[0].id, ExpenseCategory.TRANSPORT, 1200], [bookings[2].id, ExpenseCategory.FOOD, 700], [null, ExpenseCategory.SOFTWARE, 1500], [null, ExpenseCategory.MARKETING, 4500], [bookings[3].id, ExpenseCategory.CONSUMABLES, 900]] as const;
   for (const [bookingId, category, amount] of expenses) if (!await prisma.expense.findFirst({ where: { bookingId, category, amount } })) await prisma.expense.create({ data: { bookingId, category, amount, spentOn: day(-1), paidBy: "Demo Partner" } });
-  const capital = [["Asha Sharma", CapitalKind.INJECTED, 50000], ["Vikram Jain", CapitalKind.INJECTED, 40000], ["Asha Sharma", CapitalKind.WITHDRAWN, 5000], ["Vikram Jain", CapitalKind.INJECTED, 10000]] as const;
-  for (const [partnerName, kind, amount] of capital) if (!await prisma.capitalEntry.findFirst({ where: { partnerName, kind, amount } })) await prisma.capitalEntry.create({ data: { partnerName, kind, amount, date: day(-5), mode: PaymentMode.BANK } });
+  const capital = [[partners[0].id, CapitalKind.INJECTED, 50000], [partners[1].id, CapitalKind.INJECTED, 40000], [partners[0].id, CapitalKind.WITHDRAWN, 5000], [partners[1].id, CapitalKind.INJECTED, 10000]] as const;
+  for (const [partnerId, kind, amount] of capital) if (!await prisma.capitalEntry.findFirst({ where: { partnerId, kind, amount } })) await prisma.capitalEntry.create({ data: { partnerId, kind, amount, date: day(-5), mode: PaymentMode.BANK } });
 }
 main().then(() => console.log("Seed data is ready.")).finally(() => prisma.$disconnect());

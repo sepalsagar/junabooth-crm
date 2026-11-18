@@ -12,3 +12,10 @@ npm run dev
 ```
 
 Commands: `npm run build`, `npm run lint`, `npm test`, `npm run db:seed`, and `npm run db:studio`.
+
+## Authentication
+
+Set `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, and the optional `SEED_PARTNER_*`
+values in `.env`. Public sign-up is disabled. Partner seed accounts are created
+through Better Auth's server API and their passwords are generated unless explicitly
+configured locally.
