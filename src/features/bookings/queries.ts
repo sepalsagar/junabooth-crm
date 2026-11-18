@@ -11,8 +11,8 @@ import { buildBookingWhere, getAggregatedBookingIds } from "./filters";
 import { isBelowRate } from "./rules";
 import type { BookingFilters } from "./schema";
 import type { BookingStatus, Prisma } from "@/generated/prisma/client";
+import { attachExpensesForRole, can, type Role } from "@/lib/permissions";
 import { requireUser } from "@/lib/auth-guards";
-import { can, type Role } from "@/lib/permissions";
 import { getBookingCosts } from "@/features/expenses/queries";
 
 export const BOOKINGS_PAGE_SIZE = 20;
@@ -205,7 +205,7 @@ export async function getBooking(code: string) {
 
   if (can(role, "expenses")) {
     const expenses = await getBookingCosts(booking.id);
-    return { ...result, expenses };
+    return attachExpensesForRole(role, result, expenses);
   }
   return result;
 }
