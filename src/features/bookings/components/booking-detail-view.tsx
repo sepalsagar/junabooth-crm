@@ -210,9 +210,18 @@ export function BookingDetailView({
       </section>
 
       {role === "PARTNER" && "expenses" in booking && (() => {
+        const expenses = booking.expenses as Array<{
+          id: string;
+          category: "OPERATOR_FEE" | "TRANSPORT" | "FOOD" | "VENUE_CUT" | "CONSUMABLES" | "EQUIPMENT" | "SOFTWARE" | "CARPENTRY" | "EMI" | "MARKETING" | "ADMIN" | "OTHER";
+          amount: number;
+          spentOn: Date;
+          note: string | null;
+          voidedAt: Date | null;
+          receiptUrl: string | null;
+        }>;
         const profit = eventProfit(
           { basePrice: booking.basePrice, travelCharge: booking.travelCharge, discount: booking.discount, status: booking.status, printSize: booking.printSize, printsUsed: booking.printsUsed },
-          booking.expenses,
+          expenses,
           booking.payments
         );
         return (
@@ -225,13 +234,13 @@ export function BookingDetailView({
               {profit.consumablesEstimate !== null && <p className="text-sm">Consumables estimate: <strong>{inr(profit.consumablesEstimate)}</strong></p>}
               {profit.costsIncomplete && <Badge variant="destructive">Costs incomplete</Badge>}
               <div className="divide-y">
-                {booking.expenses.map((expense) => (
+                {expenses.map((expense) => (
                   <div key={expense.id} className="flex items-center justify-between py-2">
                     <div><p className="text-sm">{expense.category.replaceAll("_", " ")}</p><p className="text-xs text-muted-foreground">{expense.note || formatDateIST(expense.spentOn)}</p></div>
                     <div className="flex items-center gap-2"><span className={expense.voidedAt ? "line-through" : "font-semibold"}>{inr(expense.amount)}</span>{expense.receiptUrl && <a href={expense.receiptUrl} target="_blank" rel="noreferrer"><Image src={expense.receiptUrl} alt="Receipt" width={40} height={40} unoptimized className="h-10 w-10 rounded object-cover" /></a>}</div>
                   </div>
                 ))}
-                {booking.expenses.length === 0 && <p className="py-2 text-sm text-muted-foreground">No linked costs.</p>}
+                {expenses.length === 0 && <p className="py-2 text-sm text-muted-foreground">No linked costs.</p>}
               </div>
               <Link href={`/expenditure?bookingId=${booking.id}`}><Button variant="outline">Add cost</Button></Link>
             </CardContent>
