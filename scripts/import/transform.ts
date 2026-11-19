@@ -238,6 +238,7 @@ export function transform(rows: RawRow[]): TransformResult {
     expSeq++;
     const desc = str(r.raw["Description"] ?? r.raw["col_2"]);
     if (!desc) continue;
+    if (/^description$/i.test(desc)) continue;
 
     // Skip header-total rows (e.g. "Total Withdrawals:")
     if (/^total/i.test(desc)) continue;

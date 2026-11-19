@@ -34,6 +34,10 @@ export function parseDate(raw: unknown, context = ""): ParsedDate {
     return { value: null, warnings: [], flags: ["blank"] };
   }
 
+  if (raw instanceof Date) {
+    return { value: new Date(Date.UTC(raw.getUTCFullYear(), raw.getUTCMonth(), raw.getUTCDate())), warnings, flags: ["excel-date"] };
+  }
+
   // Excel serial number
   if (typeof raw === "number") {
     if (raw < 1 || raw > 2958465) {

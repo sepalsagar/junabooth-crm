@@ -102,6 +102,8 @@ interface BookingRow {
   finalPaid: number | null;
   statusLabel: string;   // what the sheet says (may differ from actual)
   notes: string;
+  _priceDisplay?: string;
+  _phoneAsNumber?: boolean;
   // internal flags (not written to sheet)
   _cancelled: boolean;
 }
@@ -209,15 +211,15 @@ bookings.splice(bookings.indexOf(dup39) + 1, 0, {
 
 // Plant: price in "Rs. 16,000/-" format for one booking
 const priceFmtRow = bookings.find(b => b.enqCode === "ENQ-003");
-if (priceFmtRow) (priceFmtRow as any)._priceDisplay = "Rs. 16,000/-";
+if (priceFmtRow) priceFmtRow._priceDisplay = "Rs. 16,000/-";
 
 // Plant: price as "1,45,000" (Indian grouping with no Rs) for another
 const lakshRow = bookings.find(b => b.enqCode === "ENQ-005");
-if (lakshRow) (lakshRow as any)._priceDisplay = "1,45,000";
+if (lakshRow) lakshRow._priceDisplay = "1,45,000";
 
 // Plant: phone stored as number (Excel number, no leading zero) for ENQ-007
 const phoneNumRow = bookings.find(b => b.enqCode === "ENQ-007");
-if (phoneNumRow) (phoneNumRow as any)._phoneAsNumber = true;
+if (phoneNumRow) phoneNumRow._phoneAsNumber = true;
 
 // Plant: ambiguous name matching two bookings
 // ENQ-012 and ENQ-033 share the same event-day expense name "Ravi Kumar event"
@@ -394,8 +396,6 @@ for (const w of withdrawals) {
 // ── Computed expected totals (independent of loader) ─────────────────────────
 
 // Only non-cancelled bookings
-const activeBookings = bookings.filter(b => !b._cancelled && b.jbCode !== "JB-039" || false)
-  .filter(b => b.notes !== "DUPLICATE ROW");
 // remove the duplicate row for totals
 const uniqueBookings = bookings.filter(b => b.notes !== "DUPLICATE ROW");
 const nonCancelledUnique = uniqueBookings.filter(b => !b._cancelled);
@@ -481,8 +481,8 @@ async function writeSheet() {
   ]);
 
   for (const b of bookings) {
-    const priceDisplay = (b as any)._priceDisplay;
-    const phoneAsNumber = (b as any)._phoneAsNumber;
+    const priceDisplay = b._priceDisplay;
+    const phoneAsNumber = b._phoneAsNumber;
 
     // Planted: price as formatted string for certain rows
     const basePriceCell = priceDisplay ?? b.basePrice;

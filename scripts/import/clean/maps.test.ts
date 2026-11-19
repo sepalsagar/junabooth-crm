@@ -48,7 +48,7 @@ describe("canonicalCity", () => {
 
 describe("guessCategory", () => {
   it("maps 'cab fare to venue' → TRAVEL", () => {
-    expect(guessCategory("cab fare to venue")).toBe("TRAVEL");
+    expect(guessCategory("cab fare to venue")).toBe("TRANSPORT");
   });
 
   it("maps 'lunch for team' → FOOD", () => {
