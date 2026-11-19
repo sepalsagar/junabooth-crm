@@ -1,0 +1,42 @@
+{
+  "_note": "Computed independently from planted data, NOT by running the loader. Tolerances: 0 (exact match required).",
+  "totalBilled": 1418000,
+  "totalReceived": 941500,
+  "balanceDue": 476500,
+  "expensesBySection": {
+    "eventDay": 9600,
+    "junabooth": 33600,
+    "revenue": 90000
+  },
+  "capitalInjected": 0,
+  "capitalWithdrawn": 80000,
+  "rowCounts": {
+    "bookings": 68,
+    "leads": 41,
+    "payments": 60,
+    "expenses": 35,
+    "capitalEntries": 3
+  },
+  "plantedProblems": [
+    "JB-025 missing (gap in JB sequence)",
+    "JB-039 appears twice (duplicate booking ID)",
+    "JB-010 labelled 'Paid' but only advance collected",
+    "JB-022 blank advance on Fully Paid event",
+    "JB-055 is CANCELLED",
+    "JB-003 price displayed as 'Rs. 16,000/-' string",
+    "JB-005 price displayed as '1,45,000' (Indian grouping, no Rs)",
+    "JB-007 phone stored as Excel number (no leading zero)",
+    "JB-012 and JB-033 share ambiguous event-day expense name 'Ravi Kumar event'",
+    "Lead ENQ-015 has past target date (2025)",
+    "Lead ENQ-008 target date as Excel serial",
+    "Lead ENQ-012 target date is 'TBD'",
+    "Lead ENQ-025 target date as word date ('N Nov 26')",
+    "Lead ENQ-020/021 same person: 'Snigdha jii' and 'snigdha ji'",
+    "Leads section ends at ENQ-043; bookings reference ENQ-044+ (leads inferred as WON)",
+    "Blank duplicate rows at leads rows 30-31",
+    "Revenue row 5 has no booking ID",
+    "Expense 'approx 15k' (needs-review, not importable as number)",
+    "Lump sum 'till 15 November' expense",
+    "Withdrawals header cell says 30000 but entries sum to 80000"
+  ]
+}
