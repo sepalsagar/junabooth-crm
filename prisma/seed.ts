@@ -14,7 +14,7 @@ import {
   PrintSize,
   PrismaClient,
 } from "../src/generated/prisma/client";
-import { seedAuth } from "../src/lib/seed-auth";
+import { ensureSeedPartners } from "../src/lib/seed-partners";
 
 const connectionString = process.env.DIRECT_URL;
 if (!connectionString) throw new Error("DIRECT_URL is required to seed the database.");
@@ -22,20 +22,7 @@ const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString }) })
 const day = (offset: number) => new Date(Date.now() + offset * 86_400_000);
 
 async function main() {
-  const users = await Promise.all([1, 2, 3, 4].map(async (index) => {
-    const name = process.env[`SEED_PARTNER_${index}_NAME`] ?? `Demo User ${index}`;
-    const email = process.env[`SEED_PARTNER_${index}_EMAIL`] ?? `partner${index}@example.test`;
-    const configuredPassword = process.env[`SEED_PARTNER_${index}_PASSWORD`];
-    const password = configuredPassword || crypto.randomUUID();
-    let user = await prisma.user.findUnique({ where: { email } });
-    if (!user) {
-      await seedAuth.api.signUpEmail({ body: { name, email, password } });
-      user = await prisma.user.findUniqueOrThrow({ where: { email } });
-      if (!configuredPassword) console.log(`Generated password for ${email}: ${password}`);
-    }
-    // All 4 seeded users are PARTNERS with capital equity
-    return prisma.user.update({ where: { id: user.id }, data: { role: "PARTNER" } });
-  }));
+  const users = await ensureSeedPartners();
 
   await prisma.counter.upsert({
     where: { name: "ENQ" },
