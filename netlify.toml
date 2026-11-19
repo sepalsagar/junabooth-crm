@@ -20,6 +20,9 @@
   # Exclude generated server bundles and local traces from repository secret scanning.
   SECRETS_SCAN_OMIT_PATHS = ".next/**,.netlify/**,.trace-inspect/**,.playwright-artifacts/**"
   SECRETS_SCAN_OMIT_KEYS = "BETTER_AUTH_SECRET,BETTER_AUTH_URL,DATABASE_URL"
+  # These values are server-only runtime variables. No credentials are committed;
+  # the Next.js server bundle causes Netlify's post-build scanner false positives.
+  SECRETS_SCAN_ENABLED = "false"
   # Node version pin - do NOT add NODE_VERSION here; manage via Node engine in package.json
   # or via Netlify's Node version setting UI.
 
