@@ -53,7 +53,7 @@ export interface PartnersCapitalData {
 export async function getFirmCapitalSummary(): Promise<FirmCapitalSummary> {
   const [partnerUsers, liveEntries] = await Promise.all([
     db.user.findMany({
-      where: { role: "PARTNER" },
+      where: { role: "PARTNER", disabled: false },
       select: { id: true, name: true, email: true },
       orderBy: { name: "asc" },
     }),

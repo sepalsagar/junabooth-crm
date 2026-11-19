@@ -162,7 +162,7 @@ export async function getLeadFacets() {
       orderBy: { eventType: "asc" },
     }),
     db.user.findMany({
-      where: { role: { in: ["PARTNER", "SALES"] } },
+      where: { role: { in: ["PARTNER", "SALES"] }, disabled: false },
       select: { id: true, name: true, role: true },
       orderBy: { name: "asc" },
     }),
