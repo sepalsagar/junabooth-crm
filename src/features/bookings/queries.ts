@@ -194,6 +194,40 @@ export async function getBooking(code: string) {
   const status = paymentStatus(booking, booking.payments, booking.payOnEvent);
   const belowRate = isBelowRate(booking.basePrice, booking.package);
 
+  let hasClash = false;
+  let clashWith: string[] = [];
+  if (booking.unit && booking.status !== "CANCELLED") {
+    const nearby = await db.booking.findMany({
+      where: {
+        status: { not: "CANCELLED" },
+        id: { not: booking.id },
+        unit: booking.unit,
+        eventDate: {
+          gte: new Date(booking.eventDate.getTime() - 86_400_000),
+          lte: new Date(booking.eventDate.getTime() + 86_400_000),
+        },
+      },
+      select: {
+        id: true,
+        code: true,
+        clientName: true,
+        eventDate: true,
+        startTime: true,
+        endTime: true,
+        unit: true,
+        status: true,
+      },
+    });
+
+    const { findClashes } = await import("@/features/calendar/clashes");
+    const clashMap = findClashes([booking, ...nearby]);
+    const info = clashMap.get(booking.id);
+    if (info?.hasClash) {
+      hasClash = true;
+      clashWith = info.clashingWith;
+    }
+  }
+
   const result = {
     ...booking,
     totalAmount,
@@ -201,6 +235,8 @@ export async function getBooking(code: string) {
     balance,
     paymentStatus: status,
     isBelowRate: belowRate,
+    hasClash,
+    clashWith,
   };
 
   if (can(role, "expenses")) {

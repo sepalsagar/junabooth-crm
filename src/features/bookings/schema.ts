@@ -23,6 +23,9 @@ export type PaymentKindType = (typeof PAYMENT_KINDS)[number];
 export const PRINT_SIZES = ["TWO_BY_SIX", "FOUR_BY_SIX"] as const;
 export type PrintSizeKind = (typeof PRINT_SIZES)[number];
 
+export const BOOTH_UNITS = ["UNIT_1", "UNIT_2"] as const;
+export type BoothUnitType = (typeof BOOTH_UNITS)[number];
+
 export const PAYMENT_STATUS_FILTERS = [
   "AWAITING_ADVANCE",
   "ADVANCE_PAID",
@@ -102,6 +105,7 @@ export const convertLeadToBookingSchema = z.object({
   discount: z.coerce.number().int().nonnegative("Discount must be >= 0").default(0),
   type: z.enum(BOOKING_TYPES).default("PAID"),
   payOnEvent: z.boolean().default(false),
+  unit: z.enum(BOOTH_UNITS).optional().nullable(),
   venue: z.string().trim().optional(),
   city: z.string().trim().optional(),
   dayContact: z.string().trim().optional(),
@@ -131,6 +135,7 @@ export const createBookingSchema = z.object({
   type: z.enum(BOOKING_TYPES).default("PAID"),
   status: z.enum(BOOKING_STATUSES).default("CONFIRMED"),
   payOnEvent: z.boolean().default(false),
+  unit: z.enum(BOOTH_UNITS).optional().nullable(),
   dayContact: z.string().trim().optional(),
   notes: z.string().trim().optional(),
   printSize: z.enum(PRINT_SIZES).optional(),

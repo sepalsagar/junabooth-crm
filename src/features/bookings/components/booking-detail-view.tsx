@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { ArrowLeftIcon, MessageSquareIcon, PhoneIcon } from "lucide-react";
+import { ArrowLeftIcon, MessageSquareIcon, PhoneIcon, AlertCircleIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -88,6 +88,7 @@ export function BookingDetailView({
         discount: Number(discount),
         type: String(form.get("type")) as BookingTypeKind,
         payOnEvent: form.get("payOnEvent") === "on",
+        unit: (String(form.get("unit") || "") as "UNIT_1" | "UNIT_2") || null,
         dayContact: String(form.get("dayContact") || "") || undefined,
         notes: String(form.get("notes") || "") || undefined,
         priceEditReason: String(form.get("priceEditReason") || "") || undefined,
@@ -155,6 +156,18 @@ export function BookingDetailView({
 
   return (
     <div className="space-y-6">
+      {"hasClash" in booking && Boolean(booking.hasClash) && (
+        <div className="rounded-lg border border-destructive bg-destructive/10 p-4 text-destructive flex items-center gap-3">
+          <AlertCircleIcon className="h-5 w-5 shrink-0" />
+          <div>
+            <h3 className="font-bold text-sm">Booth Unit Scheduling Clash</h3>
+            <p className="text-xs">
+              This booking is assigned to {booking.unit === "UNIT_1" ? "Unit 1" : "Unit 2"} and has an overlapping time slot with another booking on the same date ({formatDateIST(booking.eventDate)}).
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <Link href="/bookings" className="mb-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><ArrowLeftIcon className="h-3.5 w-3.5" />Back to bookings</Link>
@@ -258,7 +271,8 @@ export function BookingDetailView({
               <div className="grid gap-3 sm:grid-cols-2"><div className="space-y-1"><Label>Package</Label><select value={packageId} onChange={(event) => { setPackageId(event.target.value); const pkg = packages.find((item) => item.id === event.target.value); if (pkg) { setPackageName(pkg.name); if (pkg.price > 0) setBasePrice(String(pkg.price)); } }} className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs"><option value="">Custom</option>{packages.map((pkg) => <option key={pkg.id} value={pkg.id}>{pkg.name}</option>)}</select></div><div className="space-y-1"><Label>Package name</Label><Input value={packageName} onChange={(event) => setPackageName(event.target.value)} required /></div></div>
               <div className="grid gap-3 sm:grid-cols-4"><div className="space-y-1"><Label>Base</Label><Input type="number" value={basePrice} onChange={(event) => setBasePrice(event.target.value)} /></div><div className="space-y-1"><Label>Travel</Label><Input type="number" value={travelCharge} onChange={(event) => setTravelCharge(event.target.value)} /></div><div className="space-y-1"><Label>Discount</Label><Input type="number" value={discount} onChange={(event) => setDiscount(event.target.value)} /></div><div className="space-y-1"><Label>Type</Label><select name="type" defaultValue={booking.type} className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs">{BOOKING_TYPES.map((type) => <option key={type}>{type}</option>)}</select></div></div>
               <label className="flex items-center gap-2 text-xs"><input type="checkbox" name="payOnEvent" defaultChecked={booking.payOnEvent} />Pay on event</label>
-              <div className="grid gap-3 sm:grid-cols-2"><div className="space-y-1"><Label>Day contact</Label><Input name="dayContact" defaultValue={booking.dayContact ?? ""} /></div><div className="space-y-1"><Label>Price edit reason (completed bookings)</Label><Input name="priceEditReason" /></div></div>
+              <div className="grid gap-3 sm:grid-cols-2"><div className="space-y-1"><Label>Day contact</Label><Input name="dayContact" defaultValue={booking.dayContact ?? ""} /></div><div className="space-y-1"><Label htmlFor="unit">Booth Unit</Label><select id="unit" name="unit" defaultValue={booking.unit ?? ""} className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs"><option value="">No unit assigned</option><option value="UNIT_1">Unit 1</option><option value="UNIT_2">Unit 2</option></select></div></div>
+              <div className="space-y-1"><Label>Price edit reason (completed bookings)</Label><Input name="priceEditReason" /></div>
               <div className="space-y-1"><Label>Notes</Label><Textarea name="notes" defaultValue={booking.notes ?? ""} /></div>
               <Button type="submit" disabled={pending}>Save changes</Button>
             </form>

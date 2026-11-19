@@ -47,6 +47,7 @@ export function NewBookingSheet({ packages = [] }: { packages: { id: string; nam
         type,
         status,
         payOnEvent: form.get("payOnEvent") === "on",
+        unit: (String(form.get("unit") || "") as "UNIT_1" | "UNIT_2") || null,
         dayContact: String(form.get("dayContact") || "") || undefined,
         notes: String(form.get("notes") || "") || undefined,
       });
@@ -90,6 +91,10 @@ export function NewBookingSheet({ packages = [] }: { packages: { id: string; nam
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1"><Label htmlFor="type">Booking type</Label><select id="type" value={type} onChange={(event) => setType(event.target.value as BookingTypeKind)} className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs">{BOOKING_TYPES.map((item) => <option key={item} value={item}>{item}</option>)}</select></div>
             <div className="space-y-1"><Label htmlFor="status">Status</Label><select id="status" value={status} onChange={(event) => setStatus(event.target.value as BookingStatusType)} className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs">{BOOKING_STATUSES.map((item) => <option key={item} value={item}>{item}</option>)}</select></div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1"><Label htmlFor="unit">Booth Unit</Label><select id="unit" name="unit" className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs"><option value="">No unit assigned</option><option value="UNIT_1">Unit 1</option><option value="UNIT_2">Unit 2</option></select></div>
+            <div className="space-y-1"><Label htmlFor="dayContact">Day contact</Label><Input id="dayContact" name="dayContact" /></div>
           </div>
           <label className="flex items-center gap-2 text-xs"><input type="checkbox" name="payOnEvent" />Pay on event</label>
           <div className="space-y-1"><Label htmlFor="dayContact">Day-of-event contact</Label><Input id="dayContact" name="dayContact" /></div>

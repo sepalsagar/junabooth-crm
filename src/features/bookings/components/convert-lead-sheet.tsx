@@ -56,6 +56,7 @@ export function ConvertLeadSheet({ lead, packages = [], trigger }: ConvertLeadSh
   const [discount, setDiscount] = useState("0");
   const [type, setType] = useState<BookingTypeKind>("PAID");
   const [payOnEvent, setPayOnEvent] = useState(false);
+  const [unit, setUnit] = useState<"UNIT_1" | "UNIT_2" | "">("");
   const [city, setCity] = useState(lead.city || "");
   const [venue, setVenue] = useState(lead.venue || "");
   const [notes, setNotes] = useState(lead.notes || "");
@@ -101,6 +102,7 @@ export function ConvertLeadSheet({ lead, packages = [], trigger }: ConvertLeadSh
         discount: Number(discount) || 0,
         type,
         payOnEvent,
+        unit: unit ? unit : null,
         city: city || undefined,
         venue: venue || undefined,
         notes: notes || undefined,
@@ -220,6 +222,21 @@ export function ConvertLeadSheet({ lead, packages = [], trigger }: ConvertLeadSh
                     {t}
                   </option>
                 ))}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="unit" className="text-xs font-medium">
+                Booth Unit
+              </Label>
+              <select
+                id="unit"
+                value={unit}
+                onChange={(e) => setUnit(e.target.value as "UNIT_1" | "UNIT_2" | "")}
+                className="w-full h-8 rounded-lg border border-input bg-background px-2 text-xs"
+              >
+                <option value="">No unit assigned</option>
+                <option value="UNIT_1">Unit 1</option>
+                <option value="UNIT_2">Unit 2</option>
               </select>
             </div>
           </div>
