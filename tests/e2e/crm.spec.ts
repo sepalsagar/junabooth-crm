@@ -10,7 +10,7 @@ const SALES_PASSWORD = process.env.E2E_SALES_PASSWORD!;
 const authConfigured = !!PARTNER_EMAIL && !!PARTNER_PASSWORD;
 const e2eConfigured = !!DISABLED_EMAIL && !!DISABLED_PASSWORD && !!SALES_EMAIL && !!SALES_PASSWORD;
 
-async function loginAsPartner(page: any) {
+async function loginAsPartner(page: import("@playwright/test").Page) {
   await page.goto("/login");
   await page.getByLabel("Email").fill(PARTNER_EMAIL);
   await page.getByLabel("Password").fill(PARTNER_PASSWORD);
@@ -18,7 +18,7 @@ async function loginAsPartner(page: any) {
   await expect(page).toHaveURL(/\/overview$/);
 }
 
-async function loginAsSales(page: any) {
+async function loginAsSales(page: import("@playwright/test").Page) {
   await page.goto("/login");
   await page.getByLabel("Email").fill(SALES_EMAIL);
   await page.getByLabel("Password").fill(SALES_PASSWORD);
