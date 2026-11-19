@@ -17,6 +17,9 @@
   # To turn off: use NETLIFY UI or env var
 
 [build.environment]
+  # Runtime credentials are supplied only through Netlify environment variables.
+  # Exclude generated server bundles and local traces from repository secret scanning.
+  SECRETS_SCAN_OMIT_PATHS = ".next/**,.netlify/**,.trace-inspect/**,.playwright-artifacts/**"
   # Node version pin - do NOT add NODE_VERSION here; manage via Node engine in package.json
   # or via Netlify's Node version setting UI.
 
