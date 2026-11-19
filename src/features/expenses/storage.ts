@@ -27,11 +27,15 @@ export async function createReceiptUpload(expenseId: string, file: { type: strin
   if (!expense) return { ok: false as const, error: "Expense not found" };
   const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
   const path = `receipts/${expenseId}/${randomUUID()}.${extension}`;
-  const { data, error } = await supabaseAdmin().storage
-    .from(BUCKET)
-    .createSignedUploadUrl(path);
-  if (error || !data) return { ok: false as const, error: "Could not create receipt upload URL" };
-  return { ok: true as const, uploadUrl: data.signedUrl, path };
+  try {
+    const { data, error } = await supabaseAdmin().storage
+      .from(BUCKET)
+      .createSignedUploadUrl(path);
+    if (error || !data) return { ok: false as const, error: "Receipt uploads are unavailable. Check the private receipts bucket configuration." };
+    return { ok: true as const, uploadUrl: data.signedUrl, path };
+  } catch {
+    return { ok: false as const, error: "Receipt uploads are unavailable. Check the private receipts bucket configuration." };
+  }
 }
 
 export async function attachReceipt(expenseId: string, path: string) {
@@ -46,9 +50,13 @@ export async function attachReceipt(expenseId: string, path: string) {
 export async function getReceiptUrl(path: string) {
   await requireRole(["PARTNER"]);
   if (!path.startsWith("receipts/")) return null;
-  const { data, error } = await supabaseAdmin().storage
-    .from(BUCKET)
-    .createSignedUrl(path, 60);
-  if (error || !data) return null;
-  return data.signedUrl;
+  try {
+    const { data, error } = await supabaseAdmin().storage
+      .from(BUCKET)
+      .createSignedUrl(path, 60);
+    if (error || !data) return null;
+    return data.signedUrl;
+  } catch {
+    return null;
+  }
 }
