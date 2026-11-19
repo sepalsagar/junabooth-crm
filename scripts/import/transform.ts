@@ -95,6 +95,11 @@ function str(v: unknown): string {
   return v === null || v === undefined ? "" : String(v).trim();
 }
 
+function normalizeCode(value: string, prefix: "ENQ" | "JB") {
+  const match = new RegExp(`^${prefix}-(\\d+)$`, "i").exec(value.trim());
+  return match ? `${prefix}-${match[1].padStart(3, "0")}` : value.trim();
+}
+
 export function transform(rows: RawRow[]): TransformResult {
   const leads: ImportLead[] = [];
   const bookings: ImportBooking[] = [];
@@ -115,7 +120,7 @@ export function transform(rows: RawRow[]): TransformResult {
 
   // ── Leads & CRM ───────────────────────────────────────────────────────────
   for (const r of bySheet.get("Leads & CRM") ?? []) {
-    const enqCode = str(r.raw["ENQ Code"]);
+    const enqCode = normalizeCode(str(r.raw["ENQ Code"]), "ENQ");
     if (!enqCode) continue;
     if (seenEnqCodes.has(enqCode)) {
       warnings.push(`Duplicate ENQ code ${enqCode} at Leads row ${r.row}`);
@@ -151,7 +156,7 @@ export function transform(rows: RawRow[]): TransformResult {
 
   // ── Master Bookings ───────────────────────────────────────────────────────
   for (const r of bySheet.get("Master Bookings") ?? []) {
-    const jbCode = str(r.raw["JB Code"]);
+    const jbCode = normalizeCode(str(r.raw["JB Code"]), "JB");
     if (!jbCode) continue;
     if (seenJbCodes.has(jbCode)) {
       warnings.push(`Duplicate JB code ${jbCode} at Bookings row ${r.row} — skipping`);
@@ -160,7 +165,8 @@ export function transform(rows: RawRow[]): TransformResult {
     }
     seenJbCodes.add(jbCode);
 
-    const enqRef = str(r.raw["ENQ Code"]) || null;
+    const rawEnqRef = str(r.raw["ENQ Code"]);
+    const enqRef = rawEnqRef ? normalizeCode(rawEnqRef, "ENQ") : null;
     const ph = cleanPhone(r.raw["Phone"], `Bookings row ${r.row}`);
     if (ph.needsReview) reviewItems.push({ sheet: r.sheet, row: r.row, field: "Phone", issue: ph.warning ?? "invalid", value: r.raw["Phone"] });
 

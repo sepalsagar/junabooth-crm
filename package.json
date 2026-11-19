@@ -11,7 +11,11 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "fixtures:fake-sheet": "tsx fixtures/fake-sheet/generate.ts",
-    "import:dry": "tsx scripts/import/cli.ts dry"
+    "import:dry": "tsx scripts/import/cli.ts dry",
+    "import:commit": "tsx scripts/import/cli.ts commit",
+    "import:scratch:prepare": "tsx scripts/import/scratch.ts prepare",
+    "import:scratch:drop": "tsx scripts/import/scratch.ts drop"
+    ,"import:public-counts": "tsx scripts/import/public-counts.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
