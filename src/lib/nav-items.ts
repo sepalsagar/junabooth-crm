@@ -9,5 +9,5 @@ export const navItems: NavItem[] = [
   { label: "Calendar", href: "/calendar", resource: "bookings" },
   { label: "Due this week", href: "/collections/due-this-week", resource: "payments" }, { label: "Overdue", href: "/collections/overdue", resource: "payments" },
   { label: "Expenditure", href: "/expenditure", resource: "expenses" }, { label: "Event-day", href: "/expenditure/event-day", resource: "expenses" }, { label: "Setup", href: "/expenditure/setup", resource: "expenses" }, { label: "Operators", href: "/expenditure/operators", resource: "expenses" }, { label: "Marketing", href: "/expenditure/marketing", resource: "expenses" }, { label: "General", href: "/expenditure/general", resource: "expenses" },
-  { label: "Partners and capital", href: "/partners", resource: "capital" }, { label: "Users", href: "/settings/users", resource: "settings" }, { label: "Packages", href: "/settings/packages", resource: "settings" }, { label: "Regions", href: "/settings/regions", resource: "settings" },
+  { label: "Partners and capital", href: "/partners", resource: "capital" }, { label: "Reports", href: "/reports", resource: "reports" }, { label: "Users", href: "/settings/users", resource: "settings" }, { label: "Packages", href: "/settings/packages", resource: "settings" }, { label: "Regions", href: "/settings/regions", resource: "settings" },
 ];

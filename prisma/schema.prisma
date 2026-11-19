@@ -101,6 +101,11 @@ enum CapitalKind {
   WITHDRAWN
 }
 
+enum BoothUnit {
+  UNIT_1
+  UNIT_2
+}
+
 enum UserRole {
   PARTNER
   SALES
@@ -185,6 +190,7 @@ model Booking {
   type         BookingType       @default(PAID)
   status       BookingStatus     @default(CONFIRMED)
   payOnEvent   Boolean           @default(false)
+  unit         BoothUnit?
   printSize    PrintSize?
   printsUsed   Int?
   dayContact   String?
@@ -198,6 +204,7 @@ model Booking {
   @@index([status])
   @@index([city])
   @@index([eventDate])
+  @@index([eventDate, status])
   @@index([type])
   @@index([packageId])
 }
@@ -270,8 +277,15 @@ model CapitalEntry {
   date        DateTime
   mode        PaymentMode?
   note        String?
+  voidedAt    DateTime?
+  voidedById  String?
+  voidedBy    User?        @relation("CapitalVoidedBy", fields: [voidedById], references: [id], onDelete: SetNull)
+  voidReason  String?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+
+  @@index([partnerId])
+  @@index([voidedAt])
 }
 
 model Counter {
@@ -294,6 +308,7 @@ model User {
   accounts          Account[]
   ownedLeads        Lead[]            @relation("LeadOwner")
   capitalEntries    CapitalEntry[]    @relation("CapitalPartner")
+  voidedCapitalEntries CapitalEntry[] @relation("CapitalVoidedBy")
   leadActivities    LeadActivity[]
   bookingActivities BookingActivity[]
   voidedPayments    Payment[]         @relation("PaymentVoidedBy")

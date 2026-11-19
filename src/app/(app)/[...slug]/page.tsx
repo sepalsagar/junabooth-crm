@@ -2,10 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireUser } from "@/lib/auth-guards";
 import { can, type Resource, type Role } from "@/lib/permissions";
 import { redirect } from "next/navigation";
-const titles: Record<string, string> = { leads: "Leads", bookings: "Bookings", calendar: "Calendar", collections: "Collections", expenditure: "Expenditure", partners: "Partners and capital", settings: "Settings" };
+const titles: Record<string, string> = { leads: "Leads", bookings: "Bookings", calendar: "Calendar", collections: "Collections", expenditure: "Expenditure", partners: "Partners and capital", reports: "Reports", settings: "Settings" };
 export default async function PlaceholderPage({ params }: { params: Promise<{ slug: string[] }> }) {
   const { slug } = await params;
-  const resources: Record<string, Resource> = { leads: "leads", bookings: "bookings", calendar: "bookings", collections: "payments", expenditure: "expenses", partners: "capital", settings: "settings" };
+  const resources: Record<string, Resource> = { leads: "leads", bookings: "bookings", calendar: "bookings", collections: "payments", expenditure: "expenses", partners: "capital", reports: "reports", settings: "settings" };
   const resource = resources[slug[0]];
   if (resource) {
     const { user } = await requireUser();
