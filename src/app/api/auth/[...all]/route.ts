@@ -4,23 +4,21 @@ import { db } from "@/lib/db";
 
 const handler = toNextJsHandler(auth);
 
-async function rejectDisabledSignIn(request: Request) {
-  if (request.method !== "POST" || !request.url.endsWith("/sign-in/email")) return null;
-  const body = await request.clone().json().catch(() => null) as { email?: unknown } | null;
-  const email = typeof body?.email === "string" ? body.email.toLowerCase() : null;
-  if (!email) return null;
-  const user = await db.user.findUnique({ where: { email }, select: { disabled: true } });
-  if (!user?.disabled) return null;
-  return Response.json({ message: "Invalid email or password", code: "INVALID_EMAIL_OR_PASSWORD" }, { status: 401 });
-}
-
 export const GET = handler.GET;
+
 export async function POST(request: Request) {
-  const disabledResponse = await rejectDisabledSignIn(request);
-  if (disabledResponse) return disabledResponse;
-  const response = await handler.POST(request);
-  if (request.url.endsWith("/sign-in/email") && response.status >= 400) {
-    return Response.json({ message: "Invalid email or password", code: "INVALID_EMAIL_OR_PASSWORD" }, { status: 401 });
+  if (request.method === "POST" && request.url.endsWith("/sign-in/email")) {
+    const body = await request.clone().json().catch(() => null) as { email?: unknown } | null;
+    const email = typeof body?.email === "string" ? body.email.toLowerCase() : null;
+    if (email) {
+      const user = await db.user.findUnique({ where: { email }, select: { disabled: true } });
+      if (user?.disabled) {
+        return Response.json(
+          { message: "Invalid email or password", code: "INVALID_EMAIL_OR_PASSWORD" },
+          { status: 401 },
+        );
+      }
+    }
   }
-  return response;
+  return handler.POST(request);
 }

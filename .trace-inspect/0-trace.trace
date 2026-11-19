@@ -1,0 +1,22 @@
+{"version":10,"type":"context-options","origin":"library","browserName":"","playwrightVersion":"1.65.1","options":{},"platform":"win32","wallTime":1795102385648,"monotonicTime":24171.052,"sdkLanguage":"javascript","title":"crm.spec.ts:2 › CRM authentication and responsive smoke › wrong password is generic, login survives refresh, and sign out works"}
+{"type":"before","callId":"uigk@59","startTime":26345.68,"class":"APIRequestContext","method":"fetch","params":{"url":"/api/auth/sign-in/email","method":"POST","headers":[{"name":"Origin","value":"http://127.0.0.1:3000"}],"jsonData":"{\"email\":\"sagarkrsepal@gmail.com\",\"password\":\"intentionally-wrong-password\"}"}}
+{"type":"log","callId":"uigk@59","time":26351.1,"message":"→ POST http://127.0.0.1:3000/api/auth/sign-in/email"}
+{"type":"log","callId":"uigk@59","time":26351.124,"message":"  user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/159.0.8154.6 Safari/537.36"}
+{"type":"log","callId":"uigk@59","time":26351.133,"message":"  accept: */*"}
+{"type":"log","callId":"uigk@59","time":26351.138,"message":"  accept-encoding: gzip,deflate,br"}
+{"type":"log","callId":"uigk@59","time":26351.143,"message":"  Origin: http://127.0.0.1:3000"}
+{"type":"log","callId":"uigk@59","time":26351.147,"message":"  content-type: application/json"}
+{"type":"log","callId":"uigk@59","time":26351.151,"message":"  content-length: 76"}
+{"type":"log","callId":"uigk@59","time":26799.239,"message":"← 401 UNAUTHORIZED"}
+{"type":"log","callId":"uigk@59","time":26799.277,"message":"  x-frame-options: DENY"}
+{"type":"log","callId":"uigk@59","time":26799.288,"message":"  x-content-type-options: nosniff"}
+{"type":"log","callId":"uigk@59","time":26799.295,"message":"  referrer-policy: strict-origin-when-cross-origin"}
+{"type":"log","callId":"uigk@59","time":26799.302,"message":"  permissions-policy: camera=(), microphone=(), geolocation=()"}
+{"type":"log","callId":"uigk@59","time":26799.309,"message":"  vary: rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"}
+{"type":"log","callId":"uigk@59","time":26799.316,"message":"  content-type: application/json"}
+{"type":"log","callId":"uigk@59","time":26799.322,"message":"  content-encoding: gzip"}
+{"type":"log","callId":"uigk@59","time":26799.328,"message":"  date: Thu, 19 Nov 2026 15:33:08 GMT"}
+{"type":"log","callId":"uigk@59","time":26799.335,"message":"  connection: keep-alive"}
+{"type":"log","callId":"uigk@59","time":26799.341,"message":"  keep-alive: timeout=5"}
+{"type":"log","callId":"uigk@59","time":26799.348,"message":"  transfer-encoding: chunked"}
+{"type":"after","callId":"uigk@59","endTime":26804.468,"result":{"response":{"url":"http://127.0.0.1:3000/api/auth/sign-in/email","status":401,"statusText":"UNAUTHORIZED","headers":[{"name":"X-Frame-Options","value":"DENY"},{"name":"X-Content-Type-Options","value":"nosniff"},{"name":"Referrer-Policy","value":"strict-origin-when-cross-origin"},{"name":"Permissions-Policy","value":"camera=(), microphone=(), geolocation=()"},{"name":"Vary","value":"rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch, Accept-Encoding"},{"name":"content-type","value":"application/json"},{"name":"Content-Encoding","value":"gzip"},{"name":"Date","value":"Thu, 19 Nov 2026 15:33:08 GMT"},{"name":"Connection","value":"keep-alive"},{"name":"Keep-Alive","value":"timeout=5"},{"name":"Transfer-Encoding","value":"chunked"}],"serverAddr":{"ipAddress":"127.0.0.1","port":3000},"timing":{"startTime":1795102387825,"domainLookupStart":-1,"domainLookupEnd":-1,"connectStart":0,"secureConnectionStart":-1,"connectEnd":4.828000000001339,"requestStart":4.828000000001339,"responseStart":448.10199999999895},"responseEndTiming":455.5679999999993,"fetchUid":"e3faa82e780704fed5e90b7dab01bc99"}}}

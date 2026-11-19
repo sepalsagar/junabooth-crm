@@ -1,0 +1,76 @@
+{"version":10,"type":"context-options","origin":"testRunner","browserName":"","playwrightVersion":"1.65.1","options":{},"platform":"win32","wallTime":1795102385059,"monotonicTime":23581.5,"sdkLanguage":"javascript","testTimeout":45000,"annotations":[]}
+{"type":"before","callId":"uigk@1","startTime":23606.961,"class":"Test","method":"hook","title":"Before Hooks","params":{},"stack":[]}
+{"type":"before","callId":"uigk@30","parentId":"uigk@1","startTime":23622.755,"class":"Test","method":"fixture","title":"Fixture \"browser\"","params":{},"stack":[]}
+{"type":"before","callId":"uigk@31","parentId":"uigk@30","startTime":23625.887,"class":"Test","method":"pw:api","title":"Launch browser","params":{},"stack":[]}
+{"type":"after","callId":"uigk@31","endTime":23822.981,"annotations":[]}
+{"type":"after","callId":"uigk@30","endTime":23823.375,"annotations":[]}
+{"type":"before","callId":"uigk@34","parentId":"uigk@1","startTime":23826.968,"class":"Test","method":"fixture","title":"Fixture \"context\"","params":{},"stack":[]}
+{"type":"before","callId":"uigk@35","parentId":"uigk@34","startTime":23830.792,"class":"Test","method":"pw:api","title":"Create context","params":{},"stack":[]}
+{"type":"after","callId":"uigk@35","endTime":23849.598,"annotations":[]}
+{"type":"after","callId":"uigk@34","endTime":23873.804,"annotations":[]}
+{"type":"before","callId":"uigk@42","parentId":"uigk@1","startTime":23874.955,"class":"Test","method":"fixture","title":"Fixture \"page\"","params":{},"stack":[]}
+{"type":"before","callId":"uigk@43","parentId":"uigk@42","startTime":23877.112,"class":"Test","method":"pw:api","title":"Create page","params":{},"stack":[]}
+{"type":"after","callId":"uigk@43","endTime":24163.886,"annotations":[]}
+{"type":"after","callId":"uigk@42","endTime":24164.055,"annotations":[]}
+{"type":"before","callId":"uigk@45","parentId":"uigk@1","startTime":24165.321,"class":"Test","method":"fixture","title":"Fixture \"request\"","params":{},"stack":[]}
+{"type":"before","callId":"uigk@46","parentId":"uigk@45","startTime":24166.69,"class":"Test","method":"pw:api","title":"Create request context","params":{},"stack":[]}
+{"type":"after","callId":"uigk@46","endTime":24169.133,"annotations":[]}
+{"type":"after","callId":"uigk@45","endTime":24172.235,"annotations":[]}
+{"type":"after","callId":"uigk@1","endTime":24172.356,"annotations":[]}
+{"type":"before","callId":"uigk@51","startTime":24173.94,"class":"Test","method":"pw:api","title":"Set viewport size","params":{"width":"390","height":"844"},"stack":[{"file":"C:\\Users\\ASUS\\Desktop\\freelance\\Junabooth CRM\\tests\\e2e\\crm.spec.ts","line":2,"column":455}]}
+{"type":"after","callId":"uigk@51","endTime":24185.502,"annotations":[]}
+{"type":"before","callId":"uigk@53","startTime":24186.809,"class":"Test","method":"pw:api","title":"Navigate","subtitle":"/login","params":{"url":"/login"},"stack":[{"file":"C:\\Users\\ASUS\\Desktop\\freelance\\Junabooth CRM\\tests\\e2e\\crm.spec.ts","line":2,"column":506}]}
+{"type":"after","callId":"uigk@53","endTime":26232.822,"annotations":[]}
+{"type":"before","callId":"uigk@55","startTime":26233.745,"class":"Test","method":"pw:api","title":"Screenshot","params":{"type":"png","fullPage":"true"},"stack":[{"file":"C:\\Users\\ASUS\\Desktop\\freelance\\Junabooth CRM\\tests\\e2e\\crm.spec.ts","line":2,"column":532}]}
+{"type":"after","callId":"uigk@55","endTime":26293.878,"annotations":[]}
+{"type":"before","callId":"uigk@57","startTime":26298.489,"class":"Test","method":"pw:api","title":"Fill \"sagarkrsepal@gmail.com\"","subtitle":"getByLabel('Email')","params":{"locator":"getByLabel('Email')","value":"sagarkrsepal@gmail.com"},"stack":[{"file":"C:\\Users\\ASUS\\Desktop\\freelance\\Junabooth CRM\\tests\\e2e\\crm.spec.ts","line":2,"column":634}]}
+{"type":"after","callId":"uigk@57","endTime":26344.102,"annotations":[]}
+{"type":"before","callId":"uigk@59","startTime":26345.272,"class":"Test","method":"pw:api","title":"POST","subtitle":"/api/auth/sign-in/email","params":{"url":"/api/auth/sign-in/email","method":"POST"},"stack":[{"file":"C:\\Users\\ASUS\\Desktop\\freelance\\Junabooth CRM\\tests\\e2e\\crm.spec.ts","line":2,"column":672}]}
+{"type":"after","callId":"uigk@59","endTime":26804.883,"annotations":[]}
+{"type":"before","callId":"uigk@61","startTime":26809.495,"class":"Test","method":"expect","title":"Expect \"toBe\"","params":{"expected":"401"},"stack":[{"file":"C:\\Users\\ASUS\\Desktop\\freelance\\Junabooth CRM\\tests\\e2e\\crm.spec.ts","line":2,"column":839}]}
+{"type":"after","callId":"uigk@61","endTime":26809.965,"annotations":[]}
+{"type":"before","callId":"uigk@63","startTime":26811.434,"class":"Test","method":"expect","title":"Expect \"toBe\"","params":{"expected":"Invalid email or password"},"stack":[{"file":"C:\\Users\\ASUS\\Desktop\\freelance\\Junabooth CRM\\tests\\e2e\\crm.spec.ts","line":2,"column":902}]}
+{"type":"after","callId":"uigk@63","endTime":26811.494,"annotations":[]}
+{"type":"before","callId":"uigk@64","startTime":26812.015,"class":"Test","method":"pw:api","title":"Wait for timeout","params":{"timeout":"11000"},"stack":[{"file":"C:\\Users\\ASUS\\Desktop\\freelance\\Junabooth CRM\\tests\\e2e\\crm.spec.ts","line":2,"column":947}]}
+{"type":"after","callId":"uigk@64","endTime":37817.97,"annotations":[]}
+{"type":"before","callId":"uigk@66","startTime":37819.612,"class":"Test","method":"pw:api","title":"Fill \"Sagar@1234\"","subtitle":"getByRole('textbox', { name: 'Password' })","params":{"locator":"getByRole('textbox', { name: 'Password' })","value":"Sagar@1234"},"stack":[{"file":"C:\\Users\\ASUS\\Desktop\\freelance\\Junabooth CRM\\tests\\e2e\\crm.spec.ts","line":2,"column":1018}]}
+{"type":"after","callId":"uigk@66","endTime":37840.392,"annotations":[]}
+{"type":"before","callId":"uigk@68","startTime":37841.178,"class":"Test","method":"pw:api","title":"Click","subtitle":"getByRole('button', { name: 'Sign in' })","params":{"locator":"getByRole('button', { name: 'Sign in' })"},"stack":[{"file":"C:\\Users\\ASUS\\Desktop\\freelance\\Junabooth CRM\\tests\\e2e\\crm.spec.ts","line":2,"column":1081}]}
+{"type":"after","callId":"uigk@68","endTime":37929.186,"annotations":[]}
+{"type":"before","callId":"uigk@70","startTime":37929.746,"class":"Test","method":"expect","title":"Expect \"toHaveURL\"","params":{"expected":"Object"},"stack":[{"file":"C:\\Users\\ASUS\\Desktop\\freelance\\Junabooth CRM\\tests\\e2e\\crm.spec.ts","line":2,"column":1123}]}
+{"type":"after","callId":"uigk@70","endTime":42946.414,"annotations":[],"error":{"name":"","message":"Error: \u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveURL\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nExpected pattern: \u001b[32m/\\/overview$/\u001b[39m\nReceived string:  \u001b[31m\"http://127.0.0.1:3000/login\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveURL\" with timeout 5000ms\u001b[22m\n\u001b[2m    14 × locator resolved to <html lang=\"en\" class=\"__variable_8eaea4 __variable_8c25df h-full antialiased\">…</html>\u001b[22m\n\u001b[2m       - unexpected value \"http://127.0.0.1:3000/login\"\u001b[22m\n","stack":"Error: \u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveURL\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nExpected pattern: \u001b[32m/\\/overview$/\u001b[39m\nReceived string:  \u001b[31m\"http://127.0.0.1:3000/login\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveURL\" with timeout 5000ms\u001b[22m\n\u001b[2m    14 × locator resolved to <html lang=\"en\" class=\"__variable_8eaea4 __variable_8c25df h-full antialiased\">…</html>\u001b[22m\n\u001b[2m       - unexpected value \"http://127.0.0.1:3000/login\"\u001b[22m\n\n    at C:\\Users\\ASUS\\Desktop\\freelance\\Junabooth CRM\\tests\\e2e\\crm.spec.ts:2:1123"}}
+{"type":"error","message":"Error: \u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveURL\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nExpected pattern: \u001b[32m/\\/overview$/\u001b[39m\nReceived string:  \u001b[31m\"http://127.0.0.1:3000/login\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveURL\" with timeout 5000ms\u001b[22m\n\u001b[2m    14 × locator resolved to <html lang=\"en\" class=\"__variable_8eaea4 __variable_8c25df h-full antialiased\">…</html>\u001b[22m\n\u001b[2m       - unexpected value \"http://127.0.0.1:3000/login\"\u001b[22m\n","stack":[{"file":"C:\\Users\\ASUS\\Desktop\\freelance\\Junabooth CRM\\tests\\e2e\\crm.spec.ts","line":2,"column":1123}]}
+{"type":"before","callId":"uigk@72","startTime":42947.659,"class":"Test","method":"hook","title":"After Hooks","params":{},"stack":[]}
+{"type":"before","callId":"uigk@74","parentId":"uigk@72","startTime":42989.841,"class":"Test","method":"fixture","title":"Fixture \"request\"","params":{},"stack":[]}
+{"type":"after","callId":"uigk@74","endTime":43024.256,"annotations":[]}
+{"type":"before","callId":"uigk@78","parentId":"uigk@72","startTime":43024.629,"class":"Test","method":"fixture","title":"Fixture \"page\"","params":{},"stack":[]}
+{"type":"after","callId":"uigk@78","endTime":43024.713,"annotations":[]}
+{"type":"before","callId":"uigk@79","parentId":"uigk@72","startTime":43024.948,"class":"Test","method":"fixture","title":"Fixture \"context\"","params":{},"stack":[]}
+{"type":"before","callId":"uigk@85","parentId":"uigk@79","startTime":43183.11,"class":"Test","method":"pw:api","title":"Close context","params":{},"stack":[]}
+{"type":"after","callId":"uigk@85","endTime":43200.667,"annotations":[]}
+{"type":"after","callId":"uigk@79","endTime":43200.736,"annotations":[]}
+{"type":"before","callId":"uigk@92","startTime":43207.543,"class":"Test","method":"test.attach","title":"Attach \"error-context\"","params":{},"stack":[]}
+{"type":"after","callId":"uigk@92","endTime":43207.565,"attachments":[{"name":"error-context","contentType":"text/markdown","file":"attachments/f1bebe9eae5e06e7c02e9167a341c8d6b9d959cb"}]}
+{"type":"before","callId":"uigk@95","parentId":"uigk@72","startTime":43208.533,"class":"Test","method":"fixture","title":"Fixture \"baseURL\"","params":{},"stack":[{"file":"project#chromium","line":1,"column":1}],"group":"configuration"}
+{"type":"after","callId":"uigk@95","endTime":43208.563,"annotations":[]}
+{"type":"before","callId":"uigk@96","parentId":"uigk@72","startTime":43208.582,"class":"Test","method":"fixture","title":"Fixture \"userAgent\"","params":{},"stack":[{"file":"project#chromium","line":1,"column":1}],"group":"configuration"}
+{"type":"after","callId":"uigk@96","endTime":43208.605,"annotations":[]}
+{"type":"before","callId":"uigk@98","parentId":"uigk@72","startTime":43208.832,"class":"Test","method":"fixture","title":"Fixture \"viewport\"","params":{},"stack":[{"file":"project#chromium","line":1,"column":1}],"group":"configuration"}
+{"type":"after","callId":"uigk@98","endTime":43208.857,"annotations":[]}
+{"type":"before","callId":"uigk@100","parentId":"uigk@72","startTime":43209.232,"class":"Test","method":"fixture","title":"Fixture \"screen\"","params":{},"stack":[{"file":"project#chromium","line":1,"column":1}],"group":"configuration"}
+{"type":"after","callId":"uigk@100","endTime":43209.258,"annotations":[]}
+{"type":"before","callId":"uigk@107","parentId":"uigk@72","startTime":43210.5,"class":"Test","method":"fixture","title":"Fixture \"isMobile\"","params":{},"stack":[{"file":"project#chromium","line":1,"column":1}],"group":"configuration"}
+{"type":"after","callId":"uigk@107","endTime":43210.521,"annotations":[]}
+{"type":"before","callId":"uigk@111","parentId":"uigk@72","startTime":43211.247,"class":"Test","method":"fixture","title":"Fixture \"hasTouch\"","params":{},"stack":[{"file":"project#chromium","line":1,"column":1}],"group":"configuration"}
+{"type":"after","callId":"uigk@111","endTime":43211.285,"annotations":[]}
+{"type":"before","callId":"uigk@114","parentId":"uigk@72","startTime":43211.763,"class":"Test","method":"fixture","title":"Fixture \"deviceScaleFactor\"","params":{},"stack":[{"file":"project#chromium","line":1,"column":1}],"group":"configuration"}
+{"type":"after","callId":"uigk@114","endTime":43211.795,"annotations":[]}
+{"type":"after","callId":"uigk@72","endTime":43213.451,"attachments":[{"name":"screenshot","contentType":"image/png","file":"attachments/8572a763eacdcd1faf28771073be30b22399e473"}],"annotations":[]}
+{"type":"before","callId":"uigk@121","startTime":43213.802,"class":"Test","method":"hook","title":"Worker Cleanup","params":{},"stack":[]}
+{"type":"before","callId":"uigk@126","parentId":"uigk@121","startTime":43215.358,"class":"Test","method":"fixture","title":"Fixture \"browser\"","params":{},"stack":[]}
+{"type":"after","callId":"uigk@126","endTime":44753.107,"annotations":[]}
+{"type":"before","callId":"uigk@131","parentId":"uigk@121","startTime":44754.029,"class":"Test","method":"fixture","title":"Fixture \"defaultBrowserType\"","params":{},"stack":[{"file":"project#chromium","line":1,"column":1}],"group":"configuration"}
+{"type":"after","callId":"uigk@131","endTime":44754.056,"annotations":[]}
+{"type":"before","callId":"uigk@132","parentId":"uigk@121","startTime":44754.064,"class":"Test","method":"fixture","title":"Fixture \"screenshot\"","params":{},"stack":[{"file":"project#chromium","line":1,"column":1}],"group":"configuration"}
+{"type":"after","callId":"uigk@132","endTime":44754.082,"annotations":[]}
+{"type":"after","callId":"uigk@121","endTime":44755.332,"annotations":[]}

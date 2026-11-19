@@ -1,0 +1,1 @@
+{"version":10,"type":"context-options","origin":"library","browserName":"","playwrightVersion":"1.65.1","options":{},"platform":"win32","wallTime":1795102385345,"monotonicTime":23867.756,"sdkLanguage":"javascript","title":"crm.spec.ts:2 › CRM authentication and responsive smoke › wrong password is generic, login survives refresh, and sign out works"}

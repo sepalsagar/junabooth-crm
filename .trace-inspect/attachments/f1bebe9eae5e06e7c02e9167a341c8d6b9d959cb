@@ -1,0 +1,92 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: crm.spec.ts >> CRM authentication and responsive smoke >> wrong password is generic, login survives refresh, and sign out works
+- Location: tests\e2e\crm.spec.ts:2:347
+
+# Error details
+
+```
+Error: expect(page).toHaveURL(expected) failed
+
+Expected pattern: /\/overview$/
+Received string:  "http://127.0.0.1:3000/login"
+Timeout: 5000ms
+
+Call log:
+  - Expect "toHaveURL" with timeout 5000ms
+    14 × locator resolved to <html lang="en" class="__variable_8eaea4 __variable_8c25df h-full antialiased">…</html>
+       - unexpected value "http://127.0.0.1:3000/login"
+
+```
+
+```yaml
+- main:
+  - paragraph: Junabooth CRM
+  - text: Staff sign in Use your company account to continue. Email
+  - textbox "Email": sagarkrsepal@gmail.com
+  - text: Password
+  - textbox "Password": Sagar@1234
+  - button "Show password"
+  - button "Sign in"
+- region "Notifications alt+T"
+- alert
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from "@playwright/test";
+> 2  | 
+     |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ^ Error: expect(page).toHaveURL(expected) failed
+  3  | const email = process.env.SEED_PARTNER_1_EMAIL;
+  4  | const password = process.env.SEED_PARTNER_1_PASSWORD;
+  5  | 
+  6  | test.describe("CRM authentication and responsive smoke", () => {
+  7  |   test.skip(!email || !password, "SEED_PARTNER_1_EMAIL/PASSWORD are required for E2E login");
+  8  | 
+  9  |   test("wrong password is generic, login survives refresh, and sign out works", async ({ page, request }) => {
+  10 |     await page.setViewportSize({ width: 390, height: 844 });
+  11 |     await page.goto("/login");
+  12 |     await page.screenshot({ path: ".playwright-artifacts/login-390.png", fullPage: true });
+  13 |     await page.getByLabel("Email").fill(email!);
+  14 |     const wrong = await request.post("/api/auth/sign-in/email", { data: { email, password: "intentionally-wrong-password" }, headers: { Origin: "http://127.0.0.1:3000" } });
+  15 |     expect(wrong.status()).toBe(401);
+  16 |     expect((await wrong.json()).message).toBe("Invalid email or password");
+  17 |     await page.waitForTimeout(11_000);
+  18 |     await page.getByRole("textbox", { name: "Password" }).fill(password!);
+  19 |     await page.getByRole("button", { name: "Sign in" }).click();
+  20 |     await expect(page).toHaveURL(/\/overview$/);
+  21 |     await page.screenshot({ path: ".playwright-artifacts/overview-390.png", fullPage: true });
+  22 |     await page.reload();
+  23 |     await expect(page).toHaveURL(/\/overview$/);
+  24 |     for (const [path, file] of [["/leads", "leads"], ["/bookings", "bookings"], ["/calendar", "calendar"]] as const) {
+  25 |       await page.goto(path);
+  26 |       await page.screenshot({ path: `.playwright-artifacts/${file}-390.png`, fullPage: true });
+  27 |     }
+  28 |     const signOut = page.getByRole("button", { name: "Sign out" });
+  29 |     if (!(await signOut.isVisible().catch(() => false))) {
+  30 |       await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+  31 |     }
+  32 |     await signOut.click();
+  33 |     await expect(page).toHaveURL(/\/login$/);
+  34 |   });
+  35 | 
+  36 |   test("logged-out CSV export is unauthorized", async ({ request }) => {
+  37 |     const response = await request.get("/reports/export?month=2026-11");
+  38 |     expect(response.status()).toBe(401);
+  39 |   });
+  40 | });
+  41 | 
+  42 | test("disabled login remains generic", async ({ request }) => {
+  43 |   const response = await request.post("/api/auth/sign-in/email", { data: { email: "disabled-current@e2e.invalid", password: "not-the-password" }, headers: { Origin: "http://127.0.0.1:3000" } });
+  44 |   expect(response.status()).toBe(401);
+  45 |   expect((await response.json()).message).toBe("Invalid email or password");
+  46 | });
+  47 | 
+```

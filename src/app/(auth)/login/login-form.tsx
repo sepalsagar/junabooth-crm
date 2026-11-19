@@ -20,6 +20,7 @@ export function LoginForm() {
       const data = new FormData(event.currentTarget);
       const result = await authClient.signIn.email({ email: String(data.get("email")), password: String(data.get("password")) });
       if (result.error) return setError(true);
+      await fetch("/api/auth/get-session", { cache: "no-store" });
       router.push("/overview");
       router.refresh();
     } catch {
