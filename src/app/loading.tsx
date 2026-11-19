@@ -1,0 +1,1 @@
+export default function Loading() { return <main className="mx-auto flex min-h-screen max-w-6xl items-center justify-center p-6"><div className="animate-pulse text-sm text-muted-foreground">Loading Junabooth CRM…</div></main>; }
