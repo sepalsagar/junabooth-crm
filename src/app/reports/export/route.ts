@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
+import { getActiveSession } from "@/lib/auth-guards";
 import { db } from "@/lib/db";
 import { formatDateIST, toISODateStringIST } from "@/lib/dates";
 import { amountReceived, balanceDue, bookingTotal } from "@/lib/calc";
@@ -13,7 +13,7 @@ import { toCSVRow } from "@/features/reports/csv";
 
 export async function GET(request: Request) {
   // STRICT ROUTE HANDLER GUARD: 401 when logged out, 403 when no permission; NEVER redirect
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getActiveSession(await headers());
   if (!session) {
     return new Response("Unauthorized", { status: 401 });
   }

@@ -29,6 +29,11 @@ export const auth = betterAuth({
         defaultValue: "PARTNER",
         input: false,
       },
+      disabled: {
+        type: "boolean",
+        defaultValue: false,
+        input: false,
+      },
     },
   },
 });
