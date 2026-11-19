@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
@@ -19,7 +19,11 @@
     "import:commit": "tsx scripts/import/cli.ts commit",
     "import:scratch:prepare": "tsx scripts/import/scratch.ts prepare",
     "import:scratch:drop": "tsx scripts/import/scratch.ts drop",
-    "import:public-counts": "tsx scripts/import/public-counts.ts"
+    "import:public-counts": "tsx scripts/import/public-counts.ts",
+    "users:create": "tsx scripts/user-create.ts",
+    "users:reset-password": "tsx scripts/user-reset-password.ts",
+    "users:disable": "tsx scripts/user-disable.ts",
+    "backup:export": "tsx scripts/backup-export.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
