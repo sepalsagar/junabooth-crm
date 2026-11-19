@@ -1,0 +1,27 @@
+[build]
+  # Pin Node version for reproducibility
+  command = "npm run build"
+  publish = ".next"
+  functions = "functions"
+
+[dev]
+  # Enable branch deploy preview controls via NETLIFY UI
+  # (disabled by default in production config; see DEPLOY.md)
+
+[context.deploy-preview]
+  # Deploy previews enabled by default for pull requests
+  # To turn off: use NETLIFY UI or env var
+
+[context.branch-deploy]
+  # Branch deploys enabled by default
+  # To turn off: use NETLIFY UI or env var
+
+[build.environment]
+  # Node version pin - do NOT add NODE_VERSION here; manage via Node engine in package.json
+  # or via Netlify's Node version setting UI.
+
+# Important: The build never runs migrate dev/reset/deploy.
+# Prisma generate is handled by the build script below.
+# If you need to update the Prisma schema, run locally:
+#   npm run prisma:generate
+# Then commit the generated client changes.
