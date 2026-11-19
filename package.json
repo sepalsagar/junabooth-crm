@@ -9,7 +9,9 @@
     "lint": "eslint",
     "test": "vitest run",
     "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "fixtures:fake-sheet": "tsx fixtures/fake-sheet/generate.ts",
+    "import:dry": "tsx scripts/import/cli.ts dry"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

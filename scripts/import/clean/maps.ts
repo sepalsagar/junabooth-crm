@@ -5,7 +5,9 @@
  * - CATEGORY_GROUP: expense remark keywords → ExpenseCategory enum value
  */
 
-import type { ExpenseCategory } from "@/generated/prisma";
+export type ImportExpenseCategory =
+  | "OPERATOR_FEE" | "TRANSPORT" | "FOOD" | "VENUE_CUT" | "CONSUMABLES"
+  | "EQUIPMENT" | "SOFTWARE" | "CARPENTRY" | "EMI" | "MARKETING" | "ADMIN" | "OTHER";
 
 // Sheet payment/status labels for bookings
 export type SheetPaymentStatus =
@@ -66,22 +68,22 @@ export function canonicalCity(raw: unknown): string | null {
 
 // Map expense remark keywords → ExpenseCategory
 // First matching entry wins; order matters (most specific first)
-export const CATEGORY_KEYWORDS: Array<{ re: RegExp; category: ExpenseCategory }> = [
-  { re: /travel|fuel|cab|auto|transport|toll|petrol|diesel/i,  category: "TRAVEL" },
+export const CATEGORY_KEYWORDS: Array<{ re: RegExp; category: ImportExpenseCategory }> = [
+  { re: /travel|fuel|cab|auto|transport|toll|petrol|diesel/i,  category: "TRANSPORT" },
   { re: /food|lunch|dinner|snack|meal|tea|coffee|refresh/i,   category: "FOOD" },
-  { re: /print|album|photo|frame|canvas|book/i,               category: "PRINTING" },
-  { re: /vendor|operator|assistant|helper|staff|labour|labor/i, category: "VENDOR" },
-  { re: /rent|venue|hall|space/i,                             category: "VENUE" },
+  { re: /print|album|photo|frame|canvas|book/i,               category: "CONSUMABLES" },
+  { re: /vendor|operator|assistant|helper|staff|labour|labor/i, category: "OPERATOR_FEE" },
+  { re: /rent|venue|hall|space/i,                             category: "VENUE_CUT" },
   { re: /equipment|gear|light|camera|lens|tripod|battery/i,  category: "EQUIPMENT" },
   { re: /market|advertis|promo|social|instagram|facebook/i,  category: "MARKETING" },
-  { re: /salary|wage|pay|staff/i,                            category: "SALARY" },
+  { re: /salary|wage|pay|staff/i,                            category: "OPERATOR_FEE" },
   { re: /software|subscr|domain|host|saas/i,                 category: "SOFTWARE" },
-  { re: /phone|mobile|sim|data|recharge/i,                   category: "PHONE" },
-  { re: /office|stationary|stationery|supply|pen|paper/i,   category: "OFFICE" },
+  { re: /phone|mobile|sim|data|recharge/i,                   category: "ADMIN" },
+  { re: /office|stationary|stationery|supply|pen|paper/i,   category: "ADMIN" },
   { re: /withdraw|personal|draw/i,                            category: "OTHER" },
 ];
 
-export function guessCategory(remark: unknown): ExpenseCategory | null {
+export function guessCategory(remark: unknown): ImportExpenseCategory | null {
   if (!remark) return null;
   const s = String(remark);
   for (const { re, category } of CATEGORY_KEYWORDS) {
