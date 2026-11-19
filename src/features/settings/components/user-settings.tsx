@@ -22,7 +22,8 @@ export function UserSettings({ users }: { users: User[] }) {
   const run = (task: () => Promise<{ ok: boolean; error?: string }>) =>
     start(async () => {
       const response = await task();
-      response.ok ? toast.success("Saved") : toast.error(response.error);
+      if (response.ok) toast.success("Saved");
+      else toast.error(response.error);
     });
   return (
     <div className="space-y-6">
