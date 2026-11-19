@@ -5,6 +5,8 @@ export default defineConfig({
   test: {
     environment: "node",
     setupFiles: ["dotenv/config"],
+    include: ["src/**/*.test.{ts,tsx}", "scripts/**/*.test.{ts,tsx}"],
+    exclude: ["tests/e2e/**"],
   },
   resolve: {
     alias: {
