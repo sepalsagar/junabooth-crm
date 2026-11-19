@@ -420,6 +420,9 @@ async function main() {
     }
   }
 
+  // Clean up any legacy un-noted seed capital entries to guarantee clean reconciliation
+  await prisma.capitalEntry.deleteMany({ where: { note: null } });
+
   // Capital entries across 4 partners with 1 voided entry
   const capitalEntries: Array<{
     partnerId: string;

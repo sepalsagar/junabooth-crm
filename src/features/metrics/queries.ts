@@ -7,6 +7,7 @@ import { findClashes, type BookingForClash } from "@/features/calendar/clashes";
 import { currentISTMonth, parseMonth } from "./filters";
 import { fillMonths } from "./months";
 import { cashPosition, type CashInputs, type CashPositionResult } from "@/features/capital/calc";
+import { getFirmCapitalSummary } from "@/features/capital/queries";
 import { leadConversion, type SourceConversion } from "@/features/reports/conversion";
 import { monthlyPL, type MonthlyPLResult } from "@/features/reports/pl";
 import { eventProfit } from "@/features/expenses/profit";
@@ -110,16 +111,9 @@ export async function getUpcomingEvents(limit = 10, city?: string) {
 }
 
 export async function getCashInputs(): Promise<CashInputs> {
-  const [injectedRows, withdrawnRows, livePaymentsRows, liveExpensesRows] =
+  const [capSummary, livePaymentsRows, liveExpensesRows] =
     await Promise.all([
-      db.capitalEntry.aggregate({
-        _sum: { amount: true },
-        where: { kind: "INJECTED", voidedAt: null },
-      }),
-      db.capitalEntry.aggregate({
-        _sum: { amount: true },
-        where: { kind: "WITHDRAWN", voidedAt: null },
-      }),
+      getFirmCapitalSummary(),
       db.payment.findMany({
         where: { voidedAt: null },
         select: { amount: true, kind: true },
@@ -130,8 +124,8 @@ export async function getCashInputs(): Promise<CashInputs> {
       }),
     ]);
 
-  const injected = injectedRows._sum.amount ?? 0;
-  const withdrawn = withdrawnRows._sum.amount ?? 0;
+  const injected = capSummary.firmInjected;
+  const withdrawn = capSummary.firmWithdrawn;
   const expenses = liveExpensesRows._sum.amount ?? 0;
 
   let received = 0;
@@ -166,7 +160,7 @@ export async function getRevenueByMonth(city?: string) {
     SELECT
       to_char(date_trunc('month', "eventDate" AT TIME ZONE 'Asia/Kolkata'), 'YYYY-MM') AS "month",
       COALESCE(SUM(CASE WHEN "status" = 'COMPLETED' THEN ("basePrice" + "travelCharge" - "discount") ELSE 0 END), 0)::int AS "completed",
-      COALESCE(SUM(CASE WHEN "status" IN ('CONFIRMED', 'IN_PROGRESS', 'OPTION') THEN ("basePrice" + "travelCharge" - "discount") ELSE 0 END), 0)::int AS "upcoming"
+      COALESCE(SUM(CASE WHEN "status" IN ('CONFIRMED', 'IN_PROGRESS') THEN ("basePrice" + "travelCharge" - "discount") ELSE 0 END), 0)::int AS "upcoming"
     FROM "Booking"
     WHERE "status" != 'CANCELLED'
     ${cityFilter}

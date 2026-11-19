@@ -37,7 +37,7 @@ export function RevenueByMonthChart({ data }: RevenueByMonthChartProps) {
           <div>
             <CardTitle className="text-base font-semibold">Revenue by Month</CardTitle>
             <CardDescription className="text-xs">
-              Completed events vs. booked upcoming slots (IST event month)
+              Completed events vs. booked upcoming slots (confirmed & in-progress)
             </CardDescription>
           </div>
           {/* Text legend */}
@@ -48,7 +48,7 @@ export function RevenueByMonthChart({ data }: RevenueByMonthChartProps) {
             </div>
             <div className="flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-sm bg-[#f4a261]" />
-              <span className="text-muted-foreground">Booked / Upcoming</span>
+              <span className="text-muted-foreground">Booked Upcoming</span>
             </div>
           </div>
         </div>
@@ -94,7 +94,7 @@ export function RevenueByMonthChart({ data }: RevenueByMonthChartProps) {
                           <span className="font-mono font-medium">{inr(item.completed)}</span>
                         </div>
                         <div className="flex items-center justify-between gap-4">
-                          <span className="text-[#f4a261]">Upcoming:</span>
+                          <span className="text-[#f4a261]">Booked Upcoming:</span>
                           <span className="font-mono font-medium">{inr(item.upcoming)}</span>
                         </div>
                         <div className="border-t pt-1 flex items-center justify-between gap-4 font-bold">

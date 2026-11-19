@@ -17,11 +17,27 @@ describe("cashPosition and capitalShare", () => {
     expect(result.total).toBe(130000); // 100000 + 75000 - 30000 - 15000
   });
 
-  it("computes capitalShare with one decimal, or null when totalNet <= 0", () => {
+  it("computes capitalShare with one decimal, returns 0.0 for partnerNet <= 0, or null when positiveTotalNet <= 0", () => {
     expect(capitalShare(50000, 100000)).toBe(50.0);
     expect(capitalShare(33333, 100000)).toBe(33.3);
     expect(capitalShare(66667, 100000)).toBe(66.7);
+    expect(capitalShare(0, 100000)).toBe(0.0);
+    expect(capitalShare(-5000, 100000)).toBe(0.0);
     expect(capitalShare(10000, 0)).toBeNull();
     expect(capitalShare(10000, -5000)).toBeNull();
+  });
+
+  it("handles negative partner net by excluding from positive pool so remaining partners sum to 100%", () => {
+    const partners = [
+      { name: "A", net: 100000 },
+      { name: "B", net: 100000 },
+      { name: "C", net: -20000 },
+    ];
+    const positivePool = partners.filter((p) => p.net > 0).reduce((s, p) => s + p.net, 0); // 200,000
+    const shares = partners.map((p) => capitalShare(p.net, positivePool));
+    expect(shares[0]).toBe(50.0);
+    expect(shares[1]).toBe(50.0);
+    expect(shares[2]).toBe(0.0);
+    expect(shares.reduce((s: number, sh) => s + (sh ?? 0), 0)).toBe(100.0);
   });
 });

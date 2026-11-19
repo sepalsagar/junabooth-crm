@@ -1,6 +1,8 @@
 import type { BookingStatus, BoothUnit } from "@/generated/prisma/client";
 import { toISODateStringIST } from "@/lib/dates";
 
+export const UNIT_BUFFER_MINUTES = 0;
+
 export interface BookingForClash {
   id: string;
   code?: string;
@@ -33,7 +35,8 @@ function timesOverlap(
   startA?: string | null,
   endA?: string | null,
   startB?: string | null,
-  endB?: string | null
+  endB?: string | null,
+  bufferMinutes: number = UNIT_BUFFER_MINUTES
 ): boolean {
   const sA = parseTimeToMinutes(startA);
   const eA = parseTimeToMinutes(endA);
@@ -45,11 +48,14 @@ function timesOverlap(
     return true;
   }
 
-  // Standard interval overlap: sA < eB && sB < eA
-  return sA < eB && sB < eA;
+  // Interval overlap with optional buffer in minutes between events on same unit
+  return sA < eB + bufferMinutes && sB < eA + bufferMinutes;
 }
 
-export function findClashes(bookings: BookingForClash[]): Map<string, ClashResult> {
+export function findClashes(
+  bookings: BookingForClash[],
+  bufferMinutes: number = UNIT_BUFFER_MINUTES
+): Map<string, ClashResult> {
   const result = new Map<string, ClashResult>();
 
   // Filter out CANCELLED bookings
@@ -80,8 +86,8 @@ export function findClashes(bookings: BookingForClash[]): Map<string, ClashResul
       const date2 = toISODateStringIST(new Date(b2.eventDate));
       if (date1 !== date2) continue;
 
-      // Check time overlap
-      if (timesOverlap(b1.startTime, b1.endTime, b2.startTime, b2.endTime)) {
+      // Check time overlap with buffer
+      if (timesOverlap(b1.startTime, b1.endTime, b2.startTime, b2.endTime, bufferMinutes)) {
         const r1 = result.get(b1.id)!;
         const r2 = result.get(b2.id)!;
 
