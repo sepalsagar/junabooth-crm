@@ -38,9 +38,8 @@ test.describe("CRM authentication and responsive smoke", () => {
   });
 });
 
-test("disabled login remains generic when a disabled test email is configured", async ({ request }) => {
-  test.skip(!process.env.DISABLED_TEST_EMAIL, "Set DISABLED_TEST_EMAIL to run the disabled-account HTTP check");
-  const response = await request.post("/api/auth/sign-in/email", { data: { email: process.env.DISABLED_TEST_EMAIL, password: "not-the-password" }, headers: { Origin: "http://localhost:3000" } });
+test("disabled login remains generic", async ({ request }) => {
+  const response = await request.post("/api/auth/sign-in/email", { data: { email: "disabled-current@e2e.invalid", password: "not-the-password" }, headers: { Origin: "http://localhost:3000" } });
   expect(response.status()).toBe(401);
   expect((await response.json()).message).toBe("Invalid email or password");
 });

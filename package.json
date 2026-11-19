@@ -13,7 +13,7 @@
     "partners:sync": "tsx scripts/sync-seed-partners.ts",
     "users:disable-unmatched": "tsx scripts/disable-unmatched-users.ts",
     "partners:reset-password": "tsx scripts/reset-partner-password.ts",
-    "test:e2e": "playwright test",
+    "test:e2e": "node --import=tsx ./node_modules/@playwright/test/cli.js test",
     "fixtures:fake-sheet": "tsx fixtures/fake-sheet/generate.ts",
     "import:dry": "tsx scripts/import/cli.ts dry",
     "import:commit": "tsx scripts/import/cli.ts commit",

@@ -2,6 +2,8 @@ import { defineConfig, devices } from "@playwright/test";
 import "dotenv/config";
 
 export default defineConfig({
+  globalSetup: require.resolve("./tests/e2e/global-setup.ts"),
+  globalTeardown: require.resolve("./tests/e2e/global-teardown.ts"),
   testDir: "./tests/e2e",
   timeout: 45_000,
   fullyParallel: false,
