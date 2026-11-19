@@ -13,6 +13,7 @@ interface PartnersViewProps {
 
 export function PartnersView({ data }: PartnersViewProps) {
   const { partners, cashPosition, entries, totalNet } = data;
+  const activePartners = partners.filter((partner) => !partner.disabled);
 
   return (
     <div className="space-y-6">
@@ -25,7 +26,7 @@ export function PartnersView({ data }: PartnersViewProps) {
           </p>
         </div>
 
-        <AddCapitalSheet partners={partners.map((p) => ({ id: p.id, name: p.name }))} />
+        <AddCapitalSheet partners={activePartners.map((p) => ({ id: p.id, name: p.name }))} />
       </div>
 
       {/* Cash Position Card with 4-line breakdown */}
@@ -124,7 +125,7 @@ export function PartnersView({ data }: PartnersViewProps) {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {partners.map((p) => (
+          {activePartners.map((p) => (
             <Card key={p.id} className="relative overflow-hidden">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">

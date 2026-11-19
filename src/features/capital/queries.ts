@@ -6,6 +6,7 @@ export interface PartnerCapitalSummary {
   id: string;
   name: string;
   email: string;
+  disabled: boolean;
   injected: number;
   withdrawn: number;
   net: number;
@@ -53,8 +54,8 @@ export interface PartnersCapitalData {
 export async function getFirmCapitalSummary(): Promise<FirmCapitalSummary> {
   const [partnerUsers, liveEntries] = await Promise.all([
     db.user.findMany({
-      where: { role: "PARTNER", disabled: false },
-      select: { id: true, name: true, email: true },
+      where: { role: "PARTNER" },
+      select: { id: true, name: true, email: true, disabled: true },
       orderBy: { name: "asc" },
     }),
     db.capitalEntry.findMany({
@@ -96,6 +97,7 @@ export async function getFirmCapitalSummary(): Promise<FirmCapitalSummary> {
       id: u.id,
       name: u.name,
       email: u.email,
+      disabled: u.disabled,
       injected: s.injected,
       withdrawn: s.withdrawn,
       net,
