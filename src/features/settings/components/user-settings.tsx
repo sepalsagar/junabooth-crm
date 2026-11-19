@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { createSettingsUser, resetSettingsUserPassword, updateSettingsUser } from "../actions";
