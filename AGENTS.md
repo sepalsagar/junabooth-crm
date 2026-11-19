@@ -7,3 +7,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+# Project Rules
+
+## SECRETS RULE
+Never print, echo, log, paste, or write any secret value (keys, passwords, tokens, connection strings) in commands, test files, code, reports or commit messages. Reference them by variable name only (for example, grep using an environment variable, not a literal). If you must show that a secret was not found, show the variable NAME and the match count. Redact anything that looks like a key in your final report.
