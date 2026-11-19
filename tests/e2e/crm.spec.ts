@@ -24,7 +24,11 @@ test.describe("CRM authentication and responsive smoke", () => {
       await page.goto(path);
       await page.screenshot({ path: `.playwright-artifacts/${file}-390.png`, fullPage: true });
     }
-    await page.getByRole("button", { name: "Sign out" }).click();
+    const signOut = page.getByRole("button", { name: "Sign out" });
+    if (!(await signOut.isVisible().catch(() => false))) {
+      await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+    }
+    await signOut.click();
     await expect(page).toHaveURL(/\/login$/);
   });
 
