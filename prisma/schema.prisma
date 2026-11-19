@@ -123,6 +123,28 @@ model Package {
   updatedAt DateTime  @updatedAt
 }
 
+model Region {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String
+  actor     User     @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  action    String
+  entity    String
+  entityId  String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([actorId, createdAt])
+}
+
 model Lead {
   id           String         @id @default(cuid())
   code         String         @unique
@@ -329,6 +351,7 @@ model User {
   bookingActivities BookingActivity[]
   voidedPayments    Payment[]         @relation("PaymentVoidedBy")
   voidedExpenses    Expense[]         @relation("ExpenseVoidedBy")
+  auditLogs         AuditLog[]
 
   @@unique([email])
   @@map("user")
