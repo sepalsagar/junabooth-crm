@@ -1,0 +1,8 @@
+# Next.js 16 + Prisma 7 app. Netlify's Next.js adapter is applied automatically.
+[build]
+  # The Prisma client is written to src/generated/ (gitignored), so it must be
+  # generated before `next build`. `prisma generate` doesn't connect to the
+  # database. A non-secret placeholder is used only when DIRECT_URL is unset,
+  # so the Prisma config can load. Migrations never run during the build.
+  command = "DIRECT_URL=\"${DIRECT_URL:-postgresql://build:build@localhost:5432/build}\" npx prisma generate && npm run build"
+  publish = ".next"
