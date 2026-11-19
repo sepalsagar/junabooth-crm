@@ -142,6 +142,7 @@ model Lead {
   notes        String?
   ownerId      String?
   owner        User?          @relation("LeadOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  sourceRef    String?        @unique
   booking      Booking?
   activities   LeadActivity[]
   createdAt    DateTime       @default(now())
@@ -191,6 +192,7 @@ model Booking {
   status       BookingStatus     @default(CONFIRMED)
   payOnEvent   Boolean           @default(false)
   unit         BoothUnit?
+  sourceRef    String?           @unique
   printSize    PrintSize?
   printsUsed   Int?
   dayContact   String?
@@ -232,6 +234,7 @@ model Payment {
   mode       PaymentMode
   receivedBy String?
   reference  String?
+  sourceRef  String?     @unique
   note       String?
   voidedAt   DateTime?
   voidedById String?
@@ -255,6 +258,7 @@ model Expense {
   paidBy      String?
   note        String?
   receiptPath String?
+  sourceRef   String?         @unique
   voidedAt    DateTime?
   voidedById  String?
   voidedBy    User?           @relation("ExpenseVoidedBy", fields: [voidedById], references: [id], onDelete: SetNull)
@@ -277,6 +281,7 @@ model CapitalEntry {
   date        DateTime
   mode        PaymentMode?
   note        String?
+  sourceRef   String?      @unique
   voidedAt    DateTime?
   voidedById  String?
   voidedBy    User?        @relation("CapitalVoidedBy", fields: [voidedById], references: [id], onDelete: SetNull)
@@ -286,6 +291,16 @@ model CapitalEntry {
 
   @@index([partnerId])
   @@index([voidedAt])
+}
+
+model ImportRun {
+  id            String   @id @default(cuid())
+  startedAt     DateTime @default(now())
+  fileSha256    String
+  countsJson    Json
+  warningsCount Int
+  decisionsJson Json
+  targetHost    String
 }
 
 model Counter {

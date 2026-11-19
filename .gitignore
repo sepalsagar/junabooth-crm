@@ -42,3 +42,10 @@ next-env.d.ts
 
 # Prisma Client is generated from prisma/schema.prisma.
 /src/generated/
+
+# Excel data files (only fake test fixture is tracked)
+*.xlsx
+!fixtures/fake-sheet/*.xlsx
+
+# Private import reports and client data
+/data/private/
