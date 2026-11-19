@@ -16,5 +16,11 @@ async function rejectDisabledSignIn(request: Request) {
 
 export const GET = handler.GET;
 export async function POST(request: Request) {
-  return (await rejectDisabledSignIn(request)) ?? handler.POST(request);
+  const disabledResponse = await rejectDisabledSignIn(request);
+  if (disabledResponse) return disabledResponse;
+  const response = await handler.POST(request);
+  if (request.url.endsWith("/sign-in/email") && response.status >= 400) {
+    return Response.json({ message: "Invalid email or password", code: "INVALID_EMAIL_OR_PASSWORD" }, { status: 401 });
+  }
+  return response;
 }
