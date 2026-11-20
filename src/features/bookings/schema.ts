@@ -65,7 +65,7 @@ export const bookingFiltersSchema = z.object({
   from: z.preprocess(dateOrUndefined, z.date().optional()).catch(undefined),
   to: z.preprocess(dateOrUndefined, z.date().optional()).catch(undefined),
   timeframe: z
-    .enum(["this-week", "this-month", "past"])
+    .enum(["upcoming", "this-week", "this-month", "next-month", "past"])
     .optional()
     .catch(undefined),
   belowRate: z

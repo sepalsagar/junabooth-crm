@@ -87,7 +87,7 @@ export function buildBookingWhere(
     andClauses.push({ eventDate: eventDateClause });
   }
 
-  // Timeframe presets (this-week, this-month, past) in IST
+  // Timeframe presets (upcoming, this-week, this-month, next-month, past) in IST
   if (filters.timeframe) {
     const startToday = startOfTodayIST(now);
     const endWeek = endOfWeekIST(now);
@@ -98,7 +98,7 @@ export function buildBookingWhere(
     const daysSinceMonday = (istDayOfWeek + 6) % 7;
     const startOfWeek = new Date(startToday.getTime() - daysSinceMonday * 86_400_000);
 
-    // Calculate start and end of month in IST
+    // Calculate start and end of this month in IST
     const year = istDate.getUTCFullYear();
     const month = istDate.getUTCMonth();
     const startOfMonth = new Date(
@@ -108,10 +108,23 @@ export function buildBookingWhere(
       Date.UTC(year, month + 1, 0, 23, 59, 59, 999) - IST_OFFSET_MS
     );
 
-    if (filters.timeframe === "this-week") {
+    // Calculate start and end of next month in IST
+    const startOfNextMonth = new Date(
+      Date.UTC(year, month + 1, 1, 0, 0, 0, 0) - IST_OFFSET_MS
+    );
+    const endOfNextMonth = new Date(
+      Date.UTC(year, month + 2, 0, 23, 59, 59, 999) - IST_OFFSET_MS
+    );
+
+    if (filters.timeframe === "upcoming") {
+      // All future events from today onwards
+      andClauses.push({ eventDate: { gte: startToday } });
+    } else if (filters.timeframe === "this-week") {
       andClauses.push({ eventDate: { gte: startOfWeek, lte: endWeek } });
     } else if (filters.timeframe === "this-month") {
       andClauses.push({ eventDate: { gte: startOfMonth, lte: endOfMonth } });
+    } else if (filters.timeframe === "next-month") {
+      andClauses.push({ eventDate: { gte: startOfNextMonth, lte: endOfNextMonth } });
     } else if (filters.timeframe === "past") {
       andClauses.push({ eventDate: { lt: startToday } });
     }
