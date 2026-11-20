@@ -43,6 +43,9 @@ export function buildLeadWhere(
       { clientName: { contains: q, mode: "insensitive" } },
       { code: { contains: q, mode: "insensitive" } },
       { phone: { contains: q, mode: "insensitive" } },
+      { notes: { contains: q, mode: "insensitive" } },
+      { venue: { contains: q, mode: "insensitive" } },
+      { sourceText: { contains: q, mode: "insensitive" } },
     ];
     // If search text contains digits that could match phone, also search clean digits
     if (cleanDigits && cleanDigits !== q) {

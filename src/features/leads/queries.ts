@@ -53,10 +53,19 @@ export async function getLeads(
         eventType: true,
         targetDate: true,
         source: true,
+        sourceText: true,
+        inquiryDate: true,
+        venue: true,
+        notes: true,
         quotedAmount: true,
         status: true,
         nextFollowUp: true,
         createdAt: true,
+        booking: {
+          select: {
+            code: true,
+          },
+        },
         owner: {
           select: {
             id: true,
@@ -148,7 +157,7 @@ export async function getFollowUpsDue(now: Date = new Date()) {
 }
 
 export async function getLeadFacets() {
-  const [citiesRows, eventTypesRows, users] = await Promise.all([
+  const [citiesRows, eventTypesRows, users, statusCountRows] = await Promise.all([
     db.lead.findMany({
       select: { city: true },
       distinct: ["city"],
@@ -166,6 +175,10 @@ export async function getLeadFacets() {
       select: { id: true, name: true, role: true },
       orderBy: { name: "asc" },
     }),
+    db.lead.groupBy({
+      by: ["status"],
+      _count: { _all: true },
+    }),
   ]);
 
   const cities = citiesRows
@@ -176,9 +189,14 @@ export async function getLeadFacets() {
     .map((r) => r.eventType?.trim())
     .filter((e): e is string => Boolean(e));
 
+  const statusCounts = Object.fromEntries(
+    statusCountRows.map((r) => [r.status, r._count._all])
+  ) as Record<string, number>;
+
   return {
     cities,
     eventTypes,
     users,
+    statusCounts,
   };
 }

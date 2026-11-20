@@ -72,13 +72,13 @@ export function LeadFilters({ facets, totalCount }: LeadFiltersProps) {
     [pathname, router, searchParams]
   );
 
-  // Debounced search effect (~300ms)
+  // Debounced search effect (~120ms for fast responsive search)
   useEffect(() => {
     const handler = setTimeout(() => {
       if (searchVal !== (searchParams.get("q") ?? "")) {
         updateFilters({ q: searchVal.trim() ? searchVal.trim() : null });
       }
-    }, 300);
+    }, 120);
 
     return () => clearTimeout(handler);
   }, [searchVal, searchParams, updateFilters]);
@@ -135,10 +135,10 @@ export function LeadFilters({ facets, totalCount }: LeadFiltersProps) {
         <div className="relative flex-1">
           <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by client name, phone or code (ENQ-...)"
+            placeholder="Search client, phone, lead ID (ENQ-...)..."
             value={searchVal}
             onChange={(e) => setSearchVal(e.target.value)}
-            className="pl-8 bg-card"
+            className="pl-8 bg-card text-xs h-9"
           />
           {searchVal && (
             <button
@@ -374,17 +374,17 @@ function FilterControls({
           </select>
         </div>
 
-        {/* City */}
+        {/* Region */}
         <div>
           <label className="text-xs font-medium text-muted-foreground block mb-1">
-            City
+            Region
           </label>
           <select
             value={selectedCity}
             onChange={(e) => updateFilters({ city: e.target.value || null })}
             className="w-full text-xs h-8 rounded-md border border-input bg-background px-2"
           >
-            <option value="">All Cities</option>
+            <option value="">All Regions</option>
             {facets.cities.map((city) => (
               <option key={city} value={city}>
                 {city}

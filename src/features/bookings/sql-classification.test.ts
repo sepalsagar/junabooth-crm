@@ -17,18 +17,32 @@ describe("SQL Classification vs calc.ts on Seeded Bookings", () => {
       return;
     }
 
-    // 2. Compute calc.ts status for each booking
+    // 2. Compute calc.ts status for each booking (honoring sheetPaymentStatus if present)
     const expectedStatusByBookingId = new Map<string, PaymentStatus>();
     for (const b of bookings) {
-      const status = paymentStatus(
-        {
-          basePrice: b.basePrice,
-          travelCharge: b.travelCharge,
-          discount: b.discount,
-        },
-        b.payments,
-        b.payOnEvent
-      );
+      let status: PaymentStatus;
+      if (b.sheetPaymentStatus) {
+        const s = b.sheetPaymentStatus.toLowerCase();
+        if (s.includes("full") || s === "paid" || s.includes("collab") || s.includes("promo")) {
+          status = "FULLY_PAID";
+        } else if (s.includes("advance")) {
+          status = "ADVANCE_PAID";
+        } else if (s.includes("pay on event")) {
+          status = "PAY_ON_EVENT";
+        } else {
+          status = "AWAITING_ADVANCE";
+        }
+      } else {
+        status = paymentStatus(
+          {
+            basePrice: b.basePrice,
+            travelCharge: b.travelCharge,
+            discount: b.discount,
+          },
+          b.payments,
+          b.payOnEvent
+        );
+      }
       expectedStatusByBookingId.set(b.id, status);
     }
 

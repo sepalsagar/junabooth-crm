@@ -55,6 +55,8 @@ export function buildBookingWhere(
       { clientName: { contains: q, mode: "insensitive" } },
       { code: { contains: q, mode: "insensitive" } },
       { phone: { contains: q, mode: "insensitive" } },
+      { venue: { contains: q, mode: "insensitive" } },
+      { notes: { contains: q, mode: "insensitive" } },
     ];
     if (cleanDigits && cleanDigits !== q) {
       searchConditions.push({ phone: { contains: cleanDigits } });
@@ -144,13 +146,20 @@ export async function getAggregatedBookingIds(
     FROM "Booking" b
     LEFT JOIN "Payment" p ON p."bookingId" = b.id AND p."voidedAt" IS NULL
     LEFT JOIN "Package" pkg ON pkg.id = b."packageId"
-    GROUP BY b.id, b."basePrice", b."travelCharge", b."discount", b."payOnEvent", pkg.price
+    GROUP BY b.id, b."basePrice", b."travelCharge", b."discount", b."payOnEvent", b."sheetPaymentStatus", b."sheetBalanceDue", pkg.price
     HAVING 1=1
       ${
         hasStatusFilter
           ? Prisma.sql`
             AND (
               CASE
+                WHEN b."sheetPaymentStatus" IS NOT NULL THEN
+                  CASE
+                    WHEN b."sheetPaymentStatus" ILIKE '%full%' OR b."sheetPaymentStatus" = 'Paid' OR b."sheetPaymentStatus" ILIKE '%collab%' OR b."sheetPaymentStatus" ILIKE '%promo%' THEN 'FULLY_PAID'
+                    WHEN b."sheetPaymentStatus" ILIKE '%advance%' THEN 'ADVANCE_PAID'
+                    WHEN b."sheetPaymentStatus" ILIKE '%pay on event%' THEN 'PAY_ON_EVENT'
+                    ELSE 'AWAITING_ADVANCE'
+                  END
                 WHEN COALESCE(SUM(CASE WHEN p."kind" = 'REFUND' THEN -p.amount ELSE p.amount END), 0) > (b."basePrice" + b."travelCharge" - b."discount") THEN 'OVERPAID'
                 WHEN COALESCE(SUM(CASE WHEN p."kind" = 'REFUND' THEN -p.amount ELSE p.amount END), 0) = (b."basePrice" + b."travelCharge" - b."discount") THEN 'FULLY_PAID'
                 WHEN COALESCE(SUM(CASE WHEN p."kind" = 'REFUND' THEN -p.amount ELSE p.amount END), 0) > 0 THEN 'ADVANCE_PAID'
@@ -164,11 +173,21 @@ export async function getAggregatedBookingIds(
       ${
         filters.balanceDue === "has_balance"
           ? Prisma.sql`
-            AND ((b."basePrice" + b."travelCharge" - b."discount") - COALESCE(SUM(CASE WHEN p."kind" = 'REFUND' THEN -p.amount ELSE p.amount END), 0)) > 0
+            AND (
+              CASE
+                WHEN b."sheetBalanceDue" IS NOT NULL THEN b."sheetBalanceDue" > 0
+                ELSE ((b."basePrice" + b."travelCharge" - b."discount") - COALESCE(SUM(CASE WHEN p."kind" = 'REFUND' THEN -p.amount ELSE p.amount END), 0)) > 0
+              END
+            )
           `
           : filters.balanceDue === "no_balance"
           ? Prisma.sql`
-            AND ((b."basePrice" + b."travelCharge" - b."discount") - COALESCE(SUM(CASE WHEN p."kind" = 'REFUND' THEN -p.amount ELSE p.amount END), 0)) <= 0
+            AND (
+              CASE
+                WHEN b."sheetBalanceDue" IS NOT NULL THEN b."sheetBalanceDue" <= 0
+                ELSE ((b."basePrice" + b."travelCharge" - b."discount") - COALESCE(SUM(CASE WHEN p."kind" = 'REFUND' THEN -p.amount ELSE p.amount END), 0)) <= 0
+              END
+            )
           `
           : Prisma.empty
       }

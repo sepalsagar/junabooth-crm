@@ -165,6 +165,8 @@ model Lead {
   ownerId      String?
   owner        User?          @relation("LeadOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   sourceRef    String?        @unique
+  sourceText   String?
+  inquiryDate  DateTime?
   booking      Booking?
   activities   LeadActivity[]
   createdAt    DateTime       @default(now())
@@ -176,6 +178,7 @@ model Lead {
   @@index([targetDate])
   @@index([nextFollowUp])
   @@index([eventType])
+  @@index([inquiryDate])
 }
 
 model LeadActivity {
@@ -192,39 +195,42 @@ model LeadActivity {
 }
 
 model Booking {
-  id               String            @id @default(cuid())
-  code             String            @unique
-  leadId           String?           @unique
-  lead             Lead?             @relation(fields: [leadId], references: [id])
-  packageId        String?
-  package          Package?          @relation(fields: [packageId], references: [id], onDelete: SetNull)
-  clientName       String
-  phone            String
-  city             String?
-  region           String?           // Region from spreadsheet (e.g., "Patna", "Delhi")
-  venue            String?           // Venue & Address from spreadsheet
-  mapLink          String?
-  eventDate        DateTime          // Event Date from spreadsheet
-  startTime        String?           // Timings from spreadsheet (start)
-  endTime          String?           // Timings from spreadsheet (end)
-  packageName      String
-  basePrice        Int               // Package Fee (₹) from spreadsheet
-  travelCharge     Int               @default(0)
-  discount         Int               @default(0)
-  type             BookingType       @default(PAID)
-  status           BookingStatus    @default(CONFIRMED)
-  payOnEvent       Boolean           @default(false)
-  unit             BoothUnit?
-  sourceRef        String?           @unique
-  printSize        PrintSize?
-  printsUsed       Int?
-  dayContact       String?
-  notes            String?
-  advanceReceived  Int               // Advance Recd (₹) from spreadsheet
-  balanceDue       Int               // Balance Due (₹) from spreadsheet
-  collectionNote   String?           // Collection Note from spreadsheet
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  id                   String            @id @default(cuid())
+  code                 String            @unique
+  leadId               String?           @unique
+  lead                 Lead?             @relation(fields: [leadId], references: [id])
+  packageId            String?
+  package              Package?          @relation(fields: [packageId], references: [id], onDelete: SetNull)
+  clientName           String
+  phone                String
+  city                 String?
+  venue                String?
+  mapLink              String?
+  eventDate            DateTime
+  startTime            String?
+  endTime              String?
+  packageName          String
+  basePrice            Int
+  travelCharge         Int               @default(0)
+  discount             Int               @default(0)
+  type                 BookingType       @default(PAID)
+  status               BookingStatus     @default(CONFIRMED)
+  payOnEvent           Boolean           @default(false)
+  unit                 BoothUnit?
+  sourceRef            String?           @unique
+  printSize            PrintSize?
+  printsUsed           Int?
+  dayContact           String?
+  notes                String?
+  sheetAdvanceReceived Int?
+  sheetBalanceDue      Int?
+  sheetFinalReceived   Int?
+  sheetPaymentStatus   String?
+  payments             Payment[]
+  expenses             Expense[]
+  activities           BookingActivity[]
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
 
   @@index([status])
   @@index([city])
@@ -232,6 +238,7 @@ model Booking {
   @@index([eventDate, status])
   @@index([type])
   @@index([packageId])
+  @@index([sheetPaymentStatus])
 }
 
 model BookingActivity {

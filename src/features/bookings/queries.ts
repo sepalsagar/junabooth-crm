@@ -92,6 +92,11 @@ export async function getBookings(filters: BookingFilters) {
         type: true,
         status: true,
         payOnEvent: true,
+        notes: true,
+        sheetAdvanceReceived: true,
+        sheetBalanceDue: true,
+        sheetFinalReceived: true,
+        sheetPaymentStatus: true,
         createdAt: true,
         package: {
           select: {
@@ -118,16 +123,24 @@ export async function getBookings(filters: BookingFilters) {
     db.booking.count({ where }),
   ]);
 
-  // Compute live received, balance, and payment status per row
+  // Compute live received, balance, and payment status per row (honoring sheet ledger fields)
   const bookings = rows.map((b) => {
-    const received = amountReceived(b.payments);
-    const balance = balanceDue(b, b.payments);
-    const status = paymentStatus(b, b.payments, b.payOnEvent);
+    const advance = b.sheetAdvanceReceived ?? 0;
+    const finalRecd = b.sheetFinalReceived ?? 0;
+    const sheetReceived = advance + finalRecd;
+    const paymentsReceived = amountReceived(b.payments);
+    const received = b.payments.length > 0 ? paymentsReceived : sheetReceived;
+    const balance = b.sheetBalanceDue !== null ? b.sheetBalanceDue : balanceDue(b, b.payments);
+    const status = b.sheetPaymentStatus ? (b.sheetPaymentStatus as any) : paymentStatus(b, b.payments, b.payOnEvent);
     const belowRate = isBelowRate(b.basePrice, b.package);
-    const totalAmount = bookingTotal(b);
+    const totalAmount = b.basePrice + (b.travelCharge ?? 0) - (b.discount ?? 0);
 
     return {
       ...b,
+      leadCode: b.lead?.code ?? null,
+      region: b.city,
+      advance,
+      finalRecd,
       totalAmount,
       received,
       balance,
@@ -264,6 +277,10 @@ export async function getActiveBookingFinancials() {
       basePrice: true,
       travelCharge: true,
       discount: true,
+      sheetAdvanceReceived: true,
+      sheetBalanceDue: true,
+      sheetFinalReceived: true,
+      sheetPaymentStatus: true,
       payments: {
         select: { amount: true, kind: true, voidedAt: true },
       },
@@ -350,8 +367,11 @@ export async function getOverviewMoney(): Promise<{
   let receivedToDate = 0;
 
   for (const b of rows) {
-    const received = amountReceived(b.payments);
-    const balance = balanceDue(b, b.payments);
+    const advance = b.sheetAdvanceReceived ?? 0;
+    const finalRecd = b.sheetFinalReceived ?? 0;
+    const paymentsReceived = amountReceived(b.payments);
+    const received = b.payments.length > 0 ? paymentsReceived : (advance + finalRecd);
+    const balance = b.sheetBalanceDue !== null ? b.sheetBalanceDue : balanceDue(b, b.payments);
 
     receivedToDate += received;
     if (balance > 0) {
@@ -363,7 +383,7 @@ export async function getOverviewMoney(): Promise<{
 }
 
 export async function getBookingFacets() {
-  const [citiesRows, packages] = await Promise.all([
+  const [citiesRows, packages, statusCountRows, confirmedUpcomingRows] = await Promise.all([
     db.booking.findMany({
       select: { city: true },
       distinct: ["city"],
@@ -374,14 +394,39 @@ export async function getBookingFacets() {
       where: { active: true },
       orderBy: { price: "asc" },
     }),
+    db.booking.groupBy({
+      by: ["status"],
+      _count: { _all: true },
+    }),
+    db.booking.findMany({
+      where: { status: "CONFIRMED" },
+      select: {
+        basePrice: true,
+        sheetAdvanceReceived: true,
+        sheetBalanceDue: true,
+      },
+    }),
   ]);
 
   const cities = citiesRows
     .map((r) => r.city?.trim())
     .filter((c): c is string => Boolean(c));
 
+  const statusCounts = Object.fromEntries(
+    statusCountRows.map((r) => [r.status, r._count._all])
+  ) as Record<string, number>;
+
+  const upcomingTotals = {
+    count: confirmedUpcomingRows.length,
+    packageFee: confirmedUpcomingRows.reduce((s, r) => s + r.basePrice, 0),
+    advanceRecd: confirmedUpcomingRows.reduce((s, r) => s + (r.sheetAdvanceReceived ?? 0), 0),
+    balanceDue: confirmedUpcomingRows.reduce((s, r) => s + (r.sheetBalanceDue ?? 0), 0),
+  };
+
   return {
     cities,
     packages,
+    statusCounts,
+    upcomingTotals,
   };
 }

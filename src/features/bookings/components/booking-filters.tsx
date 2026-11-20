@@ -61,7 +61,7 @@ export function BookingFilters({
       if (searchVal !== (searchParams.get("q") ?? "")) {
         updateFilters({ q: searchVal.trim() || null });
       }
-    }, 300);
+    }, 120); // Fast 120ms debounce for snappy typing
     return () => clearTimeout(handler);
   }, [searchVal, searchParams, updateFilters]);
 
@@ -114,11 +114,11 @@ export function BookingFilters({
           ))}
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-2 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-5">
         <div>
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">City</label>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">Region</label>
           <select value={city} onChange={(event) => updateFilters({ city: event.target.value || null })} className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs">
-            <option value="">All cities</option>
+            <option value="">All regions</option>
             {facets.cities.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
         </div>
@@ -153,21 +153,7 @@ export function BookingFilters({
             <option value="past">Past</option>
           </select>
         </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">Sort</label>
-          <select value={sort} onChange={(event) => updateFilters({ sort: event.target.value })} className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs">
-            <option value="eventDate_asc">Event soonest</option>
-            <option value="eventDate_desc">Event latest</option>
-            <option value="newest">Newest</option>
-            <option value="amount_desc">Amount high</option>
-            <option value="amount_asc">Amount low</option>
-          </select>
-        </div>
       </div>
-      <label className="flex items-center gap-2 text-xs font-medium">
-        <input type="checkbox" checked={belowRate} onChange={(event) => updateFilters({ belowRate: event.target.checked ? "true" : null })} />
-        Base price below package rate
-      </label>
     </div>
   );
 
@@ -176,7 +162,7 @@ export function BookingFilters({
       <div className="flex flex-col gap-2 sm:flex-row">
         <div className="relative flex-1">
           <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input value={searchVal} onChange={(event) => setSearchVal(event.target.value)} placeholder="Search client, phone or booking code" className="bg-card pl-8" />
+          <Input value={searchVal} onChange={(event) => setSearchVal(event.target.value)} placeholder="Search client, booking ID, venue, or phone..." className="bg-card pl-8 text-xs h-9" />
           {searchVal && <button type="button" onClick={() => { setSearchVal(""); updateFilters({ q: null }); }} className="absolute right-2.5 top-2.5"><XIcon className="h-4 w-4" /></button>}
         </div>
         <div className="md:hidden">

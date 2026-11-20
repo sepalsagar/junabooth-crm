@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ userFindMany: vi.fn(), capitalFindMany: vi.fn(), leadFindMany: vi.fn() }));
-vi.mock("@/lib/db", () => ({ db: { user: { findMany: mocks.userFindMany }, capitalEntry: { findMany: mocks.capitalFindMany }, lead: { findMany: mocks.leadFindMany } } }));
+vi.mock("@/lib/db", () => ({ db: { user: { findMany: mocks.userFindMany }, capitalEntry: { findMany: mocks.capitalFindMany }, lead: { findMany: mocks.leadFindMany, groupBy: vi.fn(async () => []) } } }));
 vi.mock("@/features/metrics/queries", () => ({ getCashInputs: vi.fn(async () => ({ payments: [], expenses: [], capital: [] })) }));
 
 import { getFirmCapitalSummary } from "./queries";
