@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,7 +16,16 @@ import { inr } from "@/lib/format";
 import { formatDateIST } from "@/lib/dates";
 import { telLink, whatsappLink } from "@/features/leads/phone";
 import { BookingStatusBadge } from "./booking-status-badge";
-import { ChevronLeftIcon, ChevronRightIcon, PhoneIcon } from "lucide-react";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ClockIcon,
+  Columns3Icon,
+  GridIcon,
+  HistoryIcon,
+  MonitorIcon,
+  PhoneIcon,
+} from "lucide-react";
 import type { BookingStatus } from "@/generated/prisma/client";
 
 export interface BookingListItem {
@@ -69,6 +79,8 @@ export function BookingsTable({
   currentPath: string;
   searchParams: Record<string, string | string[] | undefined>;
 }) {
+  const [viewMode, setViewMode] = useState<"fit" | "grid">("fit");
+
   const getPageUrl = (targetPage: number) => {
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(searchParams)) {
@@ -99,174 +111,379 @@ export function BookingsTable({
   const endRecord = Math.min(page * pageSize, total);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
+      {/* View Mode Bar for Desktop */}
+      <div className="hidden md:flex items-center justify-between text-xs text-muted-foreground">
+        <div>
+          Showing <span className="font-semibold text-foreground">{startRecord}–{endRecord}</span> of{" "}
+          <span className="font-semibold text-foreground">{total}</span> bookings
+        </div>
+        <div className="flex items-center gap-1.5 bg-muted/60 p-1 rounded-lg border border-border/50">
+          <button
+            type="button"
+            onClick={() => setViewMode("fit")}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+              viewMode === "fit"
+                ? "bg-background text-foreground shadow-xs font-semibold"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+            title="Compact layout fitting 100% of your screen with zero horizontal scroll"
+          >
+            <MonitorIcon className="size-3.5" />
+            Fit Screen (No Scroll)
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("grid")}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+              viewMode === "grid"
+                ? "bg-background text-foreground shadow-xs font-semibold"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+            title="Multi-column grid showing all individual Excel columns"
+          >
+            <Columns3Icon className="size-3.5" />
+            Spreadsheet Grid
+          </button>
+        </div>
+      </div>
+
       {/* Desktop Table */}
-      <div className="hidden overflow-x-auto rounded-lg border bg-card shadow-xs md:block">
-        <Table>
+      <div className={`hidden md:block rounded-lg border bg-card shadow-xs ${viewMode === "grid" ? "overflow-x-auto" : "overflow-hidden"}`}>
+        <Table className="w-full">
           <TableHeader>
             {isUpcomingChecklistView ? (
-              // Exact "Upcoming Confirmed Events & Onsite Checklist" columns
-              <TableRow className="bg-muted/30">
-                <TableHead className="w-10 text-center font-bold">SN</TableHead>
-                <TableHead className="font-bold">Booking ID</TableHead>
-                <TableHead className="font-bold">Event Date</TableHead>
-                <TableHead className="font-bold">Client Name</TableHead>
-                <TableHead className="font-bold">Region</TableHead>
-                <TableHead className="font-bold">Venue &amp; Address</TableHead>
-                <TableHead className="font-bold">Timings</TableHead>
-                <TableHead className="text-right font-bold">Package Fee (₹)</TableHead>
-                <TableHead className="text-right font-bold">Advance Recd (₹)</TableHead>
-                <TableHead className="text-right font-bold">Balance Due (₹)</TableHead>
-                <TableHead className="font-bold">Collection Note</TableHead>
-              </TableRow>
+              // Upcoming Confirmed Events View
+              viewMode === "fit" ? (
+                // Screen Fit Mode: 7 balanced columns
+                <TableRow className="bg-muted/30">
+                  <TableHead className="w-24 font-bold">Booking ID</TableHead>
+                  <TableHead className="w-36 font-bold">Event &amp; Time</TableHead>
+                  <TableHead className="min-w-[150px] font-bold">Client &amp; Region</TableHead>
+                  <TableHead className="font-bold">Venue &amp; Location</TableHead>
+                  <TableHead className="w-28 text-right font-bold">Package Fee</TableHead>
+                  <TableHead className="w-28 text-right font-bold">Advance Recd</TableHead>
+                  <TableHead className="w-28 text-right font-bold">Balance Due</TableHead>
+                  <TableHead className="w-40 font-bold">Note / History</TableHead>
+                </TableRow>
+              ) : (
+                // Spreadsheet Grid Mode: 11 individual columns
+                <TableRow className="bg-muted/30">
+                  <TableHead className="w-10 text-center font-bold">SN</TableHead>
+                  <TableHead className="font-bold">Booking ID</TableHead>
+                  <TableHead className="font-bold">Event Date</TableHead>
+                  <TableHead className="font-bold">Client Name</TableHead>
+                  <TableHead className="font-bold">Region</TableHead>
+                  <TableHead className="font-bold">Venue &amp; Address</TableHead>
+                  <TableHead className="font-bold">Timings</TableHead>
+                  <TableHead className="text-right font-bold">Package Fee (₹)</TableHead>
+                  <TableHead className="text-right font-bold">Advance Recd (₹)</TableHead>
+                  <TableHead className="text-right font-bold">Balance Due (₹)</TableHead>
+                  <TableHead className="font-bold">Collection Note</TableHead>
+                </TableRow>
+              )
             ) : (
-              // Exact "Master Bookings & Operations Registry" columns
-              <TableRow className="bg-muted/30">
-                <TableHead className="font-bold">Booking ID</TableHead>
-                <TableHead className="font-bold">Lead ID</TableHead>
-                <TableHead className="font-bold">Region</TableHead>
-                <TableHead className="font-bold">Client Name</TableHead>
-                <TableHead className="font-bold">Event Date</TableHead>
-                <TableHead className="font-bold">Venue &amp; Address</TableHead>
-                <TableHead className="font-bold">Timings</TableHead>
-                <TableHead className="text-right font-bold">Offered Price (₹)</TableHead>
-                <TableHead className="text-right font-bold">Advance (₹)</TableHead>
-                <TableHead className="text-right font-bold">Balance Due (₹)</TableHead>
-                <TableHead className="text-right font-bold">Final Recd (₹)</TableHead>
-                <TableHead className="font-bold">Payment Status</TableHead>
-                <TableHead className="font-bold">Operational Status</TableHead>
-                <TableHead className="font-bold">Notes</TableHead>
-              </TableRow>
+              // Master Operations Registry View
+              viewMode === "fit" ? (
+                // Screen Fit Mode: 7 balanced columns fitting 100% of the screen
+                <TableRow className="bg-muted/30">
+                  <TableHead className="w-28 font-bold">Booking / Lead</TableHead>
+                  <TableHead className="w-36 font-bold">Date &amp; Timings</TableHead>
+                  <TableHead className="min-w-[150px] font-bold">Client &amp; Region</TableHead>
+                  <TableHead className="font-bold">Venue</TableHead>
+                  <TableHead className="w-32 text-right font-bold">Pricing (₹)</TableHead>
+                  <TableHead className="w-32 text-right font-bold">Settlement</TableHead>
+                  <TableHead className="w-36 font-bold">Status</TableHead>
+                  <TableHead className="w-40 font-bold">Note / History</TableHead>
+                </TableRow>
+              ) : (
+                // Spreadsheet Grid Mode: 14 individual columns
+                <TableRow className="bg-muted/30">
+                  <TableHead className="font-bold">Booking ID</TableHead>
+                  <TableHead className="font-bold">Lead ID</TableHead>
+                  <TableHead className="font-bold">Event Date</TableHead>
+                  <TableHead className="font-bold">Client Name</TableHead>
+                  <TableHead className="font-bold">Region</TableHead>
+                  <TableHead className="font-bold">Venue &amp; Address</TableHead>
+                  <TableHead className="font-bold">Timings</TableHead>
+                  <TableHead className="text-right font-bold">Offered Price (₹)</TableHead>
+                  <TableHead className="text-right font-bold">Advance (₹)</TableHead>
+                  <TableHead className="text-right font-bold">Balance Due (₹)</TableHead>
+                  <TableHead className="text-right font-bold">Final Recd (₹)</TableHead>
+                  <TableHead className="font-bold">Payment Status</TableHead>
+                  <TableHead className="font-bold">Operational Status</TableHead>
+                  <TableHead className="font-bold">Notes</TableHead>
+                </TableRow>
+              )
             )}
           </TableHeader>
           <TableBody>
             {bookings.map((booking, idx) => (
               <TableRow key={booking.id} className="hover:bg-muted/40 transition-colors">
                 {isUpcomingChecklistView ? (
-                  // Upcoming Confirmed Events row
-                  <>
-                    <TableCell className="text-center font-mono text-xs text-muted-foreground">
-                      {startRecord + idx}
-                    </TableCell>
-                    <TableCell className="font-mono text-xs font-bold">
-                      <Link className="text-primary hover:underline" href={`/bookings/${booking.code}`}>
-                        {booking.code}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap text-xs font-medium">
-                      {formatDateIST(booking.eventDate)}
-                    </TableCell>
-                    <TableCell>
-                      <Link className="font-medium hover:underline text-xs" href={`/bookings/${booking.code}`}>
-                        {booking.clientName}
-                      </Link>
-                      {booking.phone && (
-                        <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
-                          <a className="hover:underline" href={telLink(booking.phone)}>{booking.phone}</a>
-                          <a className="text-emerald-700 hover:text-emerald-800" href={whatsappLink(booking.phone)} target="_blank" rel="noreferrer">WA</a>
+                  viewMode === "fit" ? (
+                    // Upcoming Screen Fit row
+                    <>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5 font-mono text-xs font-bold">
+                          <span className="text-muted-foreground text-[10px]">#{startRecord + idx}</span>
+                          <Link className="text-primary hover:underline" href={`/bookings/${booking.code}`}>
+                            {booking.code}
+                          </Link>
                         </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-xs font-medium">{booking.city || "—"}</TableCell>
-                    <TableCell className="max-w-[220px] text-xs">
-                      {booking.venue?.startsWith("http") ? (
-                        <a href={booking.venue} target="_blank" rel="noreferrer" className="text-primary underline truncate block">
-                          Map Location
-                        </a>
-                      ) : (
-                        <span className="truncate block" title={booking.venue || ""}>
-                          {booking.venue || "—"}
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                      {timings(booking.startTime, booking.endTime)}
-                    </TableCell>
-                    <TableCell className="text-right text-xs font-semibold">
-                      {inr(booking.basePrice)}
-                    </TableCell>
-                    <TableCell className="text-right text-xs font-medium text-emerald-700">
-                      {inr(booking.advance)}
-                    </TableCell>
-                    <TableCell className={`text-right text-xs font-bold ${booking.balance > 0 ? "text-primary" : "text-muted-foreground"}`}>
-                      {inr(booking.balance)}
-                    </TableCell>
-                    <TableCell className="max-w-[180px] text-xs text-muted-foreground">
-                      <span className="line-clamp-2" title={booking.notes || ""}>
-                        {booking.notes || "—"}
-                      </span>
-                    </TableCell>
-                  </>
-                ) : (
-                  // Master Bookings Registry row
-                  <>
-                    <TableCell className="font-mono text-xs font-bold">
-                      <Link className="text-primary hover:underline" href={`/bookings/${booking.code}`}>
-                        {booking.code}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">
-                      {booking.leadCode ? (
-                        <Link className="hover:underline hover:text-foreground" href={`/leads/${booking.leadCode}`}>
-                          {booking.leadCode}
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-xs font-medium">{formatDateIST(booking.eventDate)}</div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5 truncate">
+                          {timings(booking.startTime, booking.endTime)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Link className="font-semibold hover:underline text-xs" href={`/bookings/${booking.code}`}>
+                          {booking.clientName}
                         </Link>
-                      ) : "—"}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap text-xs font-medium">
-                      {formatDateIST(booking.eventDate)}
-                    </TableCell>
-                    <TableCell>
-                      <Link className="font-medium hover:underline text-xs" href={`/bookings/${booking.code}`}>
-                        {booking.clientName}
-                      </Link>
-                      {booking.phone && (
-                        <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
-                          <a className="hover:underline" href={telLink(booking.phone)}>{booking.phone}</a>
-                          <a className="text-emerald-700 hover:text-emerald-800" href={whatsappLink(booking.phone)} target="_blank" rel="noreferrer">WA</a>
+                        <div className="flex items-center gap-2 mt-0.5 text-[11px] text-muted-foreground">
+                          {booking.city && <span className="bg-muted px-1.5 py-0.2 rounded text-[10px] font-medium">{booking.city}</span>}
+                          {booking.phone && (
+                            <a className="hover:underline" href={telLink(booking.phone)}>{booking.phone}</a>
+                          )}
                         </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-xs font-medium">{booking.city || "—"}</TableCell>
-                    <TableCell className="max-w-[200px] text-xs">
-                      {booking.venue?.startsWith("http") ? (
-                        <a href={booking.venue} target="_blank" rel="noreferrer" className="text-primary underline truncate block">
-                          Map Location
-                        </a>
-                      ) : (
-                        <span className="truncate block" title={booking.venue || ""}>
-                          {booking.venue || "—"}
+                      </TableCell>
+                      <TableCell className="max-w-[200px] text-xs">
+                        {booking.venue?.startsWith("http") ? (
+                          <a href={booking.venue} target="_blank" rel="noreferrer" className="text-primary underline truncate block">
+                            Map Location
+                          </a>
+                        ) : (
+                          <span className="truncate block" title={booking.venue || ""}>
+                            {booking.venue || "—"}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right text-xs font-semibold">
+                        {inr(booking.basePrice)}
+                      </TableCell>
+                      <TableCell className="text-right text-xs font-medium text-emerald-700">
+                        {inr(booking.advance)}
+                      </TableCell>
+                      <TableCell className={`text-right text-xs font-bold ${booking.balance > 0 ? "text-primary" : "text-muted-foreground"}`}>
+                        {inr(booking.balance)}
+                      </TableCell>
+                      <TableCell className="max-w-[180px] text-xs">
+                        <div className="truncate text-muted-foreground text-[11px]" title={booking.notes || ""}>
+                          {booking.notes || "—"}
+                        </div>
+                        <Link
+                          href={`/bookings/${booking.code}`}
+                          className="inline-flex items-center gap-1 text-[10px] font-medium text-primary hover:underline mt-0.5"
+                        >
+                          <HistoryIcon className="size-3" />
+                          History
+                        </Link>
+                      </TableCell>
+                    </>
+                  ) : (
+                    // Upcoming Full Spreadsheet Grid row
+                    <>
+                      <TableCell className="text-center font-mono text-xs text-muted-foreground">
+                        {startRecord + idx}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs font-bold">
+                        <Link className="text-primary hover:underline" href={`/bookings/${booking.code}`}>
+                          {booking.code}
+                        </Link>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap text-xs font-medium">
+                        {formatDateIST(booking.eventDate)}
+                      </TableCell>
+                      <TableCell>
+                        <Link className="font-medium hover:underline text-xs" href={`/bookings/${booking.code}`}>
+                          {booking.clientName}
+                        </Link>
+                        {booking.phone && (
+                          <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
+                            <a className="hover:underline" href={telLink(booking.phone)}>{booking.phone}</a>
+                            <a className="text-emerald-700 hover:text-emerald-800" href={whatsappLink(booking.phone)} target="_blank" rel="noreferrer">WA</a>
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs font-medium">{booking.city || "—"}</TableCell>
+                      <TableCell className="max-w-[220px] text-xs">
+                        {booking.venue?.startsWith("http") ? (
+                          <a href={booking.venue} target="_blank" rel="noreferrer" className="text-primary underline truncate block">
+                            Map Location
+                          </a>
+                        ) : (
+                          <span className="truncate block" title={booking.venue || ""}>
+                            {booking.venue || "—"}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                        {timings(booking.startTime, booking.endTime)}
+                      </TableCell>
+                      <TableCell className="text-right text-xs font-semibold">
+                        {inr(booking.basePrice)}
+                      </TableCell>
+                      <TableCell className="text-right text-xs font-medium text-emerald-700">
+                        {inr(booking.advance)}
+                      </TableCell>
+                      <TableCell className={`text-right text-xs font-bold ${booking.balance > 0 ? "text-primary" : "text-muted-foreground"}`}>
+                        {inr(booking.balance)}
+                      </TableCell>
+                      <TableCell className="max-w-[180px] text-xs text-muted-foreground">
+                        <span className="line-clamp-2" title={booking.notes || ""}>
+                          {booking.notes || "—"}
                         </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                      {timings(booking.startTime, booking.endTime)}
-                    </TableCell>
-                    <TableCell className="text-right text-xs font-semibold">
-                      {inr(booking.basePrice)}
-                    </TableCell>
-                    <TableCell className="text-right text-xs">
-                      {inr(booking.advance)}
-                    </TableCell>
-                    <TableCell className={`text-right text-xs font-bold ${booking.balance > 0 ? "text-primary" : "text-muted-foreground"}`}>
-                      {inr(booking.balance)}
-                    </TableCell>
-                    <TableCell className="text-right text-xs font-medium text-emerald-700">
-                      {booking.finalRecd > 0 ? inr(booking.finalRecd) : "—"}
-                    </TableCell>
-                    <TableCell className="text-xs">
-                      <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium whitespace-nowrap">
-                        {booking.paymentStatus || "—"}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <BookingStatusBadge status={booking.status} />
-                    </TableCell>
-                    <TableCell className="max-w-[160px] text-xs text-muted-foreground">
-                      <span className="line-clamp-2" title={booking.notes || ""}>
-                        {booking.notes || "—"}
-                      </span>
-                    </TableCell>
-                  </>
+                      </TableCell>
+                    </>
+                  )
+                ) : (
+                  viewMode === "fit" ? (
+                    // Master Bookings Screen Fit row (fits 100% of screen)
+                    <>
+                      <TableCell>
+                        <Link className="font-mono text-xs font-bold text-primary hover:underline block" href={`/bookings/${booking.code}`}>
+                          {booking.code}
+                        </Link>
+                        {booking.leadCode ? (
+                          <Link className="font-mono text-[10px] text-muted-foreground hover:underline" href={`/leads/${booking.leadCode}`}>
+                            {booking.leadCode}
+                          </Link>
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-xs font-medium whitespace-nowrap">{formatDateIST(booking.eventDate)}</div>
+                        <div className="text-[11px] text-muted-foreground truncate max-w-[120px]">
+                          {timings(booking.startTime, booking.endTime)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Link className="font-medium hover:underline text-xs block truncate max-w-[160px]" href={`/bookings/${booking.code}`}>
+                          {booking.clientName}
+                        </Link>
+                        <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-muted-foreground">
+                          {booking.city && <span className="bg-muted px-1.5 py-0.2 rounded text-[10px] font-medium">{booking.city}</span>}
+                          {booking.phone && <a className="hover:underline text-[10px]" href={telLink(booking.phone)}>{booking.phone}</a>}
+                        </div>
+                      </TableCell>
+                      <TableCell className="max-w-[160px] text-xs">
+                        {booking.venue?.startsWith("http") ? (
+                          <a href={booking.venue} target="_blank" rel="noreferrer" className="text-primary underline truncate block">
+                            Map Location
+                          </a>
+                        ) : (
+                          <span className="truncate block" title={booking.venue || ""}>
+                            {booking.venue || "—"}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="text-xs font-semibold">{inr(booking.basePrice)}</div>
+                        <div className="text-[10px] text-muted-foreground">Adv: {inr(booking.advance)}</div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className={`text-xs font-bold ${booking.balance > 0 ? "text-primary" : "text-muted-foreground"}`}>
+                          Due: {inr(booking.balance)}
+                        </div>
+                        {booking.finalRecd > 0 && (
+                          <div className="text-[10px] text-emerald-700">Recd: {inr(booking.finalRecd)}</div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1 items-start">
+                          <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium whitespace-nowrap">
+                            {booking.paymentStatus || "—"}
+                          </span>
+                          <BookingStatusBadge status={booking.status} />
+                        </div>
+                      </TableCell>
+                      <TableCell className="max-w-[160px] text-xs">
+                        <div className="truncate text-[11px] text-muted-foreground" title={booking.notes || ""}>
+                          {booking.notes || "—"}
+                        </div>
+                        <Link
+                          href={`/bookings/${booking.code}`}
+                          className="inline-flex items-center gap-1 text-[10px] font-medium text-primary hover:underline mt-0.5"
+                        >
+                          <HistoryIcon className="size-3" />
+                          History
+                        </Link>
+                      </TableCell>
+                    </>
+                  ) : (
+                    // Master Bookings Full Spreadsheet Grid row (14 columns)
+                    <>
+                      <TableCell className="font-mono text-xs font-bold">
+                        <Link className="text-primary hover:underline" href={`/bookings/${booking.code}`}>
+                          {booking.code}
+                        </Link>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground">
+                        {booking.leadCode ? (
+                          <Link className="hover:underline hover:text-foreground" href={`/leads/${booking.leadCode}`}>
+                            {booking.leadCode}
+                          </Link>
+                        ) : "—"}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap text-xs font-medium">
+                        {formatDateIST(booking.eventDate)}
+                      </TableCell>
+                      <TableCell>
+                        <Link className="font-medium hover:underline text-xs" href={`/bookings/${booking.code}`}>
+                          {booking.clientName}
+                        </Link>
+                        {booking.phone && (
+                          <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
+                            <a className="hover:underline" href={telLink(booking.phone)}>{booking.phone}</a>
+                            <a className="text-emerald-700 hover:text-emerald-800" href={whatsappLink(booking.phone)} target="_blank" rel="noreferrer">WA</a>
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs font-medium">{booking.city || "—"}</TableCell>
+                      <TableCell className="max-w-[200px] text-xs">
+                        {booking.venue?.startsWith("http") ? (
+                          <a href={booking.venue} target="_blank" rel="noreferrer" className="text-primary underline truncate block">
+                            Map Location
+                          </a>
+                        ) : (
+                          <span className="truncate block" title={booking.venue || ""}>
+                            {booking.venue || "—"}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                        {timings(booking.startTime, booking.endTime)}
+                      </TableCell>
+                      <TableCell className="text-right text-xs font-semibold">
+                        {inr(booking.basePrice)}
+                      </TableCell>
+                      <TableCell className="text-right text-xs">
+                        {inr(booking.advance)}
+                      </TableCell>
+                      <TableCell className={`text-right text-xs font-bold ${booking.balance > 0 ? "text-primary" : "text-muted-foreground"}`}>
+                        {inr(booking.balance)}
+                      </TableCell>
+                      <TableCell className="text-right text-xs font-medium text-emerald-700">
+                        {booking.finalRecd > 0 ? inr(booking.finalRecd) : "—"}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium whitespace-nowrap">
+                          {booking.paymentStatus || "—"}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <BookingStatusBadge status={booking.status} />
+                      </TableCell>
+                      <TableCell className="max-w-[160px] text-xs text-muted-foreground">
+                        <span className="line-clamp-2" title={booking.notes || ""}>
+                          {booking.notes || "—"}
+                        </span>
+                      </TableCell>
+                    </>
+                  )
                 )}
               </TableRow>
             ))}

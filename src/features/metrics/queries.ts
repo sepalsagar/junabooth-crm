@@ -12,21 +12,59 @@ import { leadConversion, type SourceConversion } from "@/features/reports/conver
 import { monthlyPL, type MonthlyPLResult } from "@/features/reports/pl";
 import { eventProfit } from "@/features/expenses/profit";
 
-export async function getBalanceToCollect(): Promise<number> {
-  const rows = await getActiveBookingFinancials();
+export async function getBalanceToCollect(city?: string): Promise<number> {
+  const bookings = await db.booking.findMany({
+    where: {
+      status: "CONFIRMED",
+      ...(city ? { city } : {}),
+    },
+    select: {
+      sheetBalanceDue: true,
+      basePrice: true,
+      travelCharge: true,
+      discount: true,
+      payments: {
+        where: { voidedAt: null },
+        select: { amount: true, kind: true },
+      },
+    },
+  });
+
   let total = 0;
-  for (const b of rows) {
-    const bal = balanceDue(b, b.payments);
-    if (bal > 0) total += bal;
+  for (const b of bookings) {
+    if (b.sheetBalanceDue !== null) {
+      total += b.sheetBalanceDue;
+    } else {
+      const bal = balanceDue(b, b.payments);
+      if (bal > 0) total += bal;
+    }
   }
   return total;
 }
 
-export async function getReceivedToDate(): Promise<number> {
-  const rows = await getActiveBookingFinancials();
+export async function getReceivedToDate(city?: string): Promise<number> {
+  const bookings = await db.booking.findMany({
+    where: {
+      status: { not: "CANCELLED" },
+      ...(city ? { city } : {}),
+    },
+    select: {
+      sheetAdvanceReceived: true,
+      sheetFinalReceived: true,
+      payments: {
+        where: { voidedAt: null },
+        select: { amount: true, kind: true },
+      },
+    },
+  });
+
   let total = 0;
-  for (const b of rows) {
-    total += amountReceived(b.payments);
+  for (const b of bookings) {
+    if (b.payments.length > 0) {
+      total += amountReceived(b.payments);
+    } else {
+      total += (b.sheetAdvanceReceived ?? 0) + (b.sheetFinalReceived ?? 0);
+    }
   }
   return total;
 }
@@ -111,7 +149,7 @@ export async function getUpcomingEvents(limit = 10, city?: string) {
 }
 
 export async function getCashInputs(): Promise<CashInputs> {
-  const [capSummary, livePaymentsRows, liveExpensesRows] =
+  const [capSummary, livePaymentsRows, liveExpensesRows, bookings] =
     await Promise.all([
       getFirmCapitalSummary(),
       db.payment.findMany({
@@ -122,6 +160,13 @@ export async function getCashInputs(): Promise<CashInputs> {
         _sum: { amount: true },
         where: { voidedAt: null },
       }),
+      db.booking.findMany({
+        where: { status: { not: "CANCELLED" } },
+        select: {
+          sheetAdvanceReceived: true,
+          sheetFinalReceived: true,
+        },
+      }),
     ]);
 
   const injected = capSummary.firmInjected;
@@ -129,19 +174,25 @@ export async function getCashInputs(): Promise<CashInputs> {
   const expenses = liveExpensesRows._sum.amount ?? 0;
 
   let received = 0;
-  for (const p of livePaymentsRows) {
-    if (p.kind === "REFUND") {
-      received -= p.amount;
-    } else {
-      received += p.amount;
+  if (livePaymentsRows.length > 0) {
+    for (const p of livePaymentsRows) {
+      if (p.kind === "REFUND") {
+        received -= p.amount;
+      } else {
+        received += p.amount;
+      }
+    }
+  } else {
+    for (const b of bookings) {
+      received += (b.sheetAdvanceReceived ?? 0) + (b.sheetFinalReceived ?? 0);
     }
   }
 
   return {
     injected,
-    received,
-    expenses,
     withdrawn,
+    expenses,
+    received,
   };
 }
 
@@ -197,10 +248,12 @@ export async function getEventsByCity() {
     },
   });
 
-  return rows.map((r) => ({
-    city: r.city ?? "Other",
-    count: r._count.id,
-  }));
+  return rows
+    .filter((r) => r.city && r.city.trim() !== "" && r._count.id > 0)
+    .map((r) => ({
+      city: r.city!.trim(),
+      count: r._count.id,
+    }));
 }
 
 export async function getLeadsByStatus() {
