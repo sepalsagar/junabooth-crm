@@ -51,7 +51,7 @@ export function BookingFilters({
         else params.set(key, value);
       }
       if (!("page" in updates)) params.delete("page");
-      startTransition(() => router.push(`${pathname}?${params.toString()}`));
+      startTransition(() => router.replace(`${pathname}?${params.toString()}`, { scroll: false }));
     },
     [pathname, router, searchParams]
   );
@@ -61,7 +61,7 @@ export function BookingFilters({
       if (searchVal !== (searchParams.get("q") ?? "")) {
         updateFilters({ q: searchVal.trim() || null });
       }
-    }, 120); // Fast 120ms debounce for snappy typing
+    }, 100);
     return () => clearTimeout(handler);
   }, [searchVal, searchParams, updateFilters]);
 

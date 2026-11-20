@@ -109,9 +109,9 @@ export function BookingsTable({
               <TableRow className="bg-muted/30">
                 <TableHead className="w-10 text-center font-bold">SN</TableHead>
                 <TableHead className="font-bold">Booking ID</TableHead>
-                <TableHead className="font-bold">Region</TableHead>
-                <TableHead className="font-bold">Client Name</TableHead>
                 <TableHead className="font-bold">Event Date</TableHead>
+                <TableHead className="font-bold">Client Name</TableHead>
+                <TableHead className="font-bold">Region</TableHead>
                 <TableHead className="font-bold">Venue &amp; Address</TableHead>
                 <TableHead className="font-bold">Timings</TableHead>
                 <TableHead className="text-right font-bold">Package Fee (₹)</TableHead>
@@ -153,7 +153,9 @@ export function BookingsTable({
                         {booking.code}
                       </Link>
                     </TableCell>
-                    <TableCell className="text-xs font-medium">{booking.city || "—"}</TableCell>
+                    <TableCell className="whitespace-nowrap text-xs font-medium">
+                      {formatDateIST(booking.eventDate)}
+                    </TableCell>
                     <TableCell>
                       <Link className="font-medium hover:underline text-xs" href={`/bookings/${booking.code}`}>
                         {booking.clientName}
@@ -165,9 +167,7 @@ export function BookingsTable({
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="whitespace-nowrap text-xs font-medium">
-                      {formatDateIST(booking.eventDate)}
-                    </TableCell>
+                    <TableCell className="text-xs font-medium">{booking.city || "—"}</TableCell>
                     <TableCell className="max-w-[220px] text-xs">
                       {booking.venue?.startsWith("http") ? (
                         <a href={booking.venue} target="_blank" rel="noreferrer" className="text-primary underline truncate block">
@@ -212,7 +212,9 @@ export function BookingsTable({
                         </Link>
                       ) : "—"}
                     </TableCell>
-                    <TableCell className="text-xs font-medium">{booking.city || "—"}</TableCell>
+                    <TableCell className="whitespace-nowrap text-xs font-medium">
+                      {formatDateIST(booking.eventDate)}
+                    </TableCell>
                     <TableCell>
                       <Link className="font-medium hover:underline text-xs" href={`/bookings/${booking.code}`}>
                         {booking.clientName}
@@ -224,9 +226,7 @@ export function BookingsTable({
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="whitespace-nowrap text-xs font-medium">
-                      {formatDateIST(booking.eventDate)}
-                    </TableCell>
+                    <TableCell className="text-xs font-medium">{booking.city || "—"}</TableCell>
                     <TableCell className="max-w-[200px] text-xs">
                       {booking.venue?.startsWith("http") ? (
                         <a href={booking.venue} target="_blank" rel="noreferrer" className="text-primary underline truncate block">

@@ -66,19 +66,19 @@ export function LeadFilters({ facets, totalCount }: LeadFiltersProps) {
       }
 
       startTransition(() => {
-        router.push(`${pathname}?${params.toString()}`);
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
       });
     },
     [pathname, router, searchParams]
   );
 
-  // Debounced search effect (~120ms for fast responsive search)
+  // Debounced search effect (100ms for fast responsive search)
   useEffect(() => {
     const handler = setTimeout(() => {
       if (searchVal !== (searchParams.get("q") ?? "")) {
         updateFilters({ q: searchVal.trim() ? searchVal.trim() : null });
       }
-    }, 120);
+    }, 100);
 
     return () => clearTimeout(handler);
   }, [searchVal, searchParams, updateFilters]);

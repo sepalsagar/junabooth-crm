@@ -24,9 +24,10 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
     { value: "WON", label: "Won / Converted", count: facets.statusCounts["WON"] ?? 0 },
     { value: "NEW", label: "New Inquiries", count: facets.statusCounts["NEW"] ?? 0 },
     { value: "FOLLOW_UP", label: "Follow-Up", count: facets.statusCounts["FOLLOW_UP"] ?? 0 },
+    { value: "LOST", label: "Lost / Cancelled", count: facets.statusCounts["LOST"] ?? 0 },
+    { value: "POSTPONED", label: "Postponed", count: facets.statusCounts["POSTPONED"] ?? 0 },
     { value: "QUOTED", label: "Quoted", count: facets.statusCounts["QUOTED"] ?? 0 },
     { value: "CONTACTED", label: "Contacted", count: facets.statusCounts["CONTACTED"] ?? 0 },
-    { value: "LOST", label: "Lost", count: facets.statusCounts["LOST"] ?? 0 },
   ];
 
   return (

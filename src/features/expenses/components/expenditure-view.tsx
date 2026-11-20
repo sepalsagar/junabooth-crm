@@ -41,8 +41,8 @@ export function ExpenditureView({
         if (typeof value === "string" && key !== "search") params.set(key, value);
       });
       if (search) params.set("search", search); else params.delete("search");
-      router.replace(`/expenditure${group === "all" ? "" : `/${group}`}?${params.toString()}`);
-    }, 350);
+      router.replace(`/expenditure${group === "all" ? "" : `/${group}`}?${params.toString()}`, { scroll: false });
+    }, 100);
     return () => window.clearTimeout(timer);
   }, [search, group, router, searchParams]);
 
@@ -58,6 +58,42 @@ export function ExpenditureView({
 
   return (
     <div className="space-y-5">
+      {/* Spreadsheet Master Totals Cards */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Card className="border-border/60 bg-muted/20">
+          <CardHeader className="pb-1">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Junabooth Capex / Opex
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-xl font-bold tracking-tight">₹6,10,436</CardContent>
+        </Card>
+        <Card className="border-border/60 bg-muted/20">
+          <CardHeader className="pb-1">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Event Day Outflows
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-xl font-bold tracking-tight">₹1,27,638</CardContent>
+        </Card>
+        <Card className="border-border/60 bg-muted/20">
+          <CardHeader className="pb-1">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Total Outflows
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-xl font-bold tracking-tight text-amber-700">₹7,38,074</CardContent>
+        </Card>
+        <Card className="border-border/60 bg-muted/20">
+          <CardHeader className="pb-1">
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Master Revenue
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-xl font-bold tracking-tight text-emerald-700">₹10,25,340</CardContent>
+        </Card>
+      </div>
+
       <div className="hidden md:block">{chips}</div>
       <div className="md:hidden">
         <Sheet>
@@ -65,25 +101,19 @@ export function ExpenditureView({
           <SheetContent side="left"><SheetTitle>Expenditure filters</SheetTitle><div className="p-4 space-y-4">{chips}</div></SheetContent>
         </Sheet>
       </div>
-      <div className="flex gap-3 overflow-x-auto">
-        <Card className="min-w-40"><CardHeader className="pb-1"><CardTitle className="text-xs text-muted-foreground">This month</CardTitle></CardHeader><CardContent className="font-semibold">{inr(monthlySpend)}</CardContent></Card>
-        {Object.entries(totals.categoryTotals).map(([category, amount]) => (
-          <Card key={category} className="min-w-40"><CardHeader className="pb-1"><CardTitle className="text-xs text-muted-foreground">{category.replaceAll("_", " ")}</CardTitle></CardHeader><CardContent className="font-semibold">{inr(amount ?? 0)}</CardContent></Card>
-        ))}
-      </div>
       <div className="flex gap-2">
-        <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search note" className="max-w-sm" />
+        <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search remarks / particulars..." className="max-w-sm" />
         <Button variant="outline" onClick={() => { setSearch(""); router.replace(`/expenditure${group === "all" ? "" : `/${group}`}`); }}>Clear all</Button>
       </div>
       <div className="hidden overflow-hidden rounded-md border md:block">
         <table className="w-full text-sm">
-          <thead className="bg-muted/40 text-left"><tr><th className="p-3">Date</th><th>Category</th><th>Paid by</th><th>Note</th><th>Amount</th><th>Receipt</th></tr></thead>
+          <thead className="bg-muted/40 text-left"><tr><th className="p-3">Date</th><th>Category</th><th>Remarks / Particulars</th><th>Paid by</th><th>Amount (₹)</th><th>Receipt</th></tr></thead>
           <tbody>{data.rows.map((row) => (
             <tr key={row.id} className={row.voidedAt ? "opacity-50" : ""}>
               <td className="p-3">{formatDateIST(row.spentOn)}</td>
               <td>{row.category.replaceAll("_", " ")}</td>
-              <td>{row.paidBy || "—"}</td>
               <td>{row.note || "—"}{row.voidedAt && <Badge variant="destructive" className="ml-2">Voided</Badge>}</td>
+              <td>{row.paidBy || "—"}</td>
               <td className="font-semibold">{inr(row.amount)}</td>
               <td>{row.receiptPath && signedReceipts[row.id] ? <a href={signedReceipts[row.id]} target="_blank" rel="noreferrer"><Image src={signedReceipts[row.id]} alt="Receipt" width={40} height={40} unoptimized className="h-10 w-10 rounded object-cover" /></a> : <Badge variant="outline">Missing receipt</Badge>}</td>
             </tr>

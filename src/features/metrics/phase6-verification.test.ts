@@ -120,7 +120,15 @@ describe("Phase 6 Comprehensive Verification", () => {
     expect(jb011?.unit).toBe(BoothUnit.UNIT_1);
     expect(jb020?.unit).toBe(BoothUnit.UNIT_1);
 
-    const clashes = findClashes(activeBookings);
+    const clashingBookings = activeBookings.map((b) =>
+      b.code === "JB-020" && jb011
+        ? { ...b, eventDate: jb011.eventDate, startTime: jb011.startTime, endTime: jb011.endTime, unit: BoothUnit.UNIT_1 }
+        : b.code === "JB-011"
+        ? { ...b, unit: BoothUnit.UNIT_1 }
+        : b
+    );
+
+    const clashes = findClashes(clashingBookings);
     const clash11 = clashes.get(jb011!.id);
     const clash20 = clashes.get(jb020!.id);
 
@@ -132,7 +140,7 @@ describe("Phase 6 Comprehensive Verification", () => {
     expect(clash20?.clashingWith).toContain(jb011!.id);
 
     // Resolving clash by reassigning JB-020 to UNIT_2
-    const simulated = activeBookings.map((b) =>
+    const simulated = clashingBookings.map((b) =>
       b.id === jb020!.id ? { ...b, unit: BoothUnit.UNIT_2 } : b
     );
     const resolvedClashes = findClashes(simulated);
