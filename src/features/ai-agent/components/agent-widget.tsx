@@ -1,10 +1,18 @@
 "use client";
 
 // src/features/ai-agent/components/agent-widget.tsx
-// Floating AI chat widget — opens from any page in the dashboard
+// Fully draggable floating AI chat widget — move anywhere with mouse or touch
 
 import { useRef, useState, useTransition, useEffect } from "react";
-import { BotIcon, XIcon, SendIcon, SparklesIcon, Loader2Icon, ExternalLinkIcon } from "lucide-react";
+import {
+  BotIcon,
+  XIcon,
+  SendIcon,
+  SparklesIcon,
+  Loader2Icon,
+  ExternalLinkIcon,
+  GripHorizontalIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
@@ -22,6 +30,8 @@ interface Message {
 const QUICK_PROMPTS = [
   "Show me today's leads",
   "What are my upcoming events?",
+  "Total expenses this month?",
+  "Partner revenue & shares",
   "Any overdue collections?",
   "Show quick stats",
 ];
@@ -88,10 +98,45 @@ export function AgentWidget() {
     {
       id: "welcome",
       role: "assistant",
-      content: "Hey! I'm JunaBot 👋 Tell me about a new lead, booking, or expense — I'll add it to the CRM for you. Or ask me anything about your data.",
+      content:
+        "Hey! I'm JunaBot 👋 Tell me about a new lead, booking, or expense — I'll record it in the CRM for you. Or ask me about expenses, partner shares, upcoming events, or stats.",
     },
   ]);
   const [isPending, startTransition] = useTransition();
+
+  // ── Drag state for the floating button ────────────────────────────────────
+  const [btnPos, setBtnPos] = useState<{ x: number; y: number } | null>(null);
+  const [isDraggingBtn, setIsDraggingBtn] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const dragStartRef = useRef<{
+    startX: number;
+    startY: number;
+    initialX: number;
+    initialY: number;
+    moved: boolean;
+  }>({
+    startX: 0,
+    startY: 0,
+    initialX: 0,
+    initialY: 0,
+    moved: false,
+  });
+
+  // ── Drag state for the chat dialog panel ──────────────────────────────────
+  const [panelPos, setPanelPos] = useState<{ x: number; y: number } | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const panelDragRef = useRef<{
+    startX: number;
+    startY: number;
+    initialX: number;
+    initialY: number;
+  }>({
+    startX: 0,
+    startY: 0,
+    initialX: 0,
+    initialY: 0,
+  });
+
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -101,6 +146,87 @@ export function AgentWidget() {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [open, messages]);
+
+  // ── Floating Button Drag Handlers ─────────────────────────────────────────
+  const handleButtonPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (e.button !== 0) return; // Only primary mouse button
+    const rect = btnRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    dragStartRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      initialX: rect.left,
+      initialY: rect.top,
+      moved: false,
+    };
+
+    const handlePointerMove = (ev: PointerEvent) => {
+      const dx = ev.clientX - dragStartRef.current.startX;
+      const dy = ev.clientY - dragStartRef.current.startY;
+
+      if (!dragStartRef.current.moved && Math.hypot(dx, dy) > 5) {
+        dragStartRef.current.moved = true;
+        setIsDraggingBtn(true);
+      }
+
+      if (dragStartRef.current.moved) {
+        const nextX = Math.max(12, Math.min(window.innerWidth - 68, dragStartRef.current.initialX + dx));
+        const nextY = Math.max(12, Math.min(window.innerHeight - 68, dragStartRef.current.initialY + dy));
+        setBtnPos({ x: nextX, y: nextY });
+      }
+    };
+
+    const handlePointerUp = () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+      setTimeout(() => setIsDraggingBtn(false), 50);
+
+      // If user did NOT drag more than 5px, treat as click and toggle panel
+      if (!dragStartRef.current.moved) {
+        setOpen((v) => !v);
+      }
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+  };
+
+  // ── Chat Panel Header Drag Handlers ───────────────────────────────────────
+  const handlePanelHeaderPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    // Don't drag if clicking the close icon button
+    if ((e.target as HTMLElement).closest("button")) return;
+
+    const rect = panelRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    panelDragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      initialX: rect.left,
+      initialY: rect.top,
+    };
+
+    const handlePanelMove = (ev: PointerEvent) => {
+      const dx = ev.clientX - panelDragRef.current.startX;
+      const dy = ev.clientY - panelDragRef.current.startY;
+      const w = rect.width;
+      const h = rect.height;
+
+      const nextX = Math.max(8, Math.min(window.innerWidth - w - 8, panelDragRef.current.initialX + dx));
+      const nextY = Math.max(8, Math.min(window.innerHeight - h - 8, panelDragRef.current.initialY + dy));
+      setPanelPos({ x: nextX, y: nextY });
+    };
+
+    const handlePanelUp = () => {
+      window.removeEventListener("pointermove", handlePanelMove);
+      window.removeEventListener("pointerup", handlePanelUp);
+    };
+
+    window.addEventListener("pointermove", handlePanelMove);
+    window.addEventListener("pointerup", handlePanelUp);
+  };
 
   const send = (text: string) => {
     if (!text.trim() || isPending) return;
@@ -121,13 +247,16 @@ export function AgentWidget() {
         });
 
         if (!res.ok) {
-          const err = await res.json() as { error?: string };
-          throw new Error(err.error ?? "Request failed");
+          const err = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(err.error || `Request failed with status ${res.status}`);
         }
 
-        const data = await res.json() as {
+        const data = (await res.json()) as {
           content: string;
-          toolResults?: Array<{ name: string; result: { ok: boolean; message?: string; error?: string; link?: string } }>;
+          toolResults?: Array<{
+            name: string;
+            result: { ok: boolean; message?: string; error?: string; link?: string };
+          }>;
         };
 
         const assistantMsg: Message = {
@@ -143,7 +272,7 @@ export function AgentWidget() {
           {
             id: Date.now().toString() + "_err",
             role: "assistant",
-            content: `Sorry, something went wrong: ${e instanceof Error ? e.message : "unknown error"}. Please try again.`,
+            content: `Notice: ${e instanceof Error ? e.message : "Something went wrong"}. Please try again.`,
           },
         ]);
       }
@@ -159,33 +288,64 @@ export function AgentWidget() {
 
   return (
     <>
-      {/* Floating button */}
+      {/* Draggable Floating Button */}
       <button
-        onClick={() => setOpen((v) => !v)}
-        className={`fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 ${
-          open ? "bg-muted text-foreground" : "bg-primary text-primary-foreground"
-        }`}
-        aria-label="Open AI Assistant"
-        title="JunaBot — AI Assistant"
+        ref={btnRef}
+        onPointerDown={handleButtonPointerDown}
+        style={
+          btnPos
+            ? { left: `${btnPos.x}px`, top: `${btnPos.y}px`, touchAction: "none" }
+            : { bottom: "24px", right: "24px", touchAction: "none" }
+        }
+        className={`fixed z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-2xl transition-transform select-none ${
+          isDraggingBtn
+            ? "cursor-grabbing scale-105 shadow-2xl ring-4 ring-primary/30"
+            : "cursor-grab hover:scale-105 active:scale-95"
+        } ${open ? "bg-muted text-foreground border border-border" : "bg-primary text-primary-foreground"}`}
+        aria-label="JunaBot AI Assistant (drag anywhere)"
+        title="JunaBot — Drag anywhere or click to chat"
       >
-        {open ? <XIcon className="size-5" /> : <SparklesIcon className="size-6" />}
+        {open ? <XIcon className="size-5 pointer-events-none" /> : <SparklesIcon className="size-6 pointer-events-none" />}
       </button>
 
-      {/* Chat panel */}
+      {/* Draggable Chat Dialog Panel */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 flex w-[360px] max-w-[calc(100vw-24px)] flex-col rounded-2xl border bg-background shadow-2xl">
-          {/* Header */}
-          <div className="flex items-center gap-2.5 rounded-t-2xl border-b bg-primary px-4 py-3 text-primary-foreground">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-foreground/20">
+        <div
+          ref={panelRef}
+          style={
+            panelPos
+              ? { left: `${panelPos.x}px`, top: `${panelPos.y}px` }
+              : btnPos
+              ? {
+                  left: `${Math.max(12, Math.min(window.innerWidth - 372, btnPos.x - 310))}px`,
+                  top: `${Math.max(12, btnPos.y - 460 > 10 ? btnPos.y - 460 : btnPos.y + 70)}px`,
+                }
+              : { bottom: "96px", right: "24px" }
+          }
+          className="fixed z-50 flex w-[370px] max-w-[calc(100vw-24px)] flex-col rounded-2xl border bg-background shadow-2xl overflow-hidden"
+        >
+          {/* Draggable Header */}
+          <div
+            onPointerDown={handlePanelHeaderPointerDown}
+            className="flex items-center gap-2.5 bg-primary px-3.5 py-3 text-primary-foreground cursor-grab active:cursor-grabbing select-none"
+            style={{ touchAction: "none" }}
+            title="Drag header to move chat window"
+          >
+            <div className="flex items-center gap-1.5 opacity-60 hover:opacity-100">
+              <GripHorizontalIcon className="size-4" />
+            </div>
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-foreground/20 shrink-0">
               <BotIcon className="size-4" />
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-semibold leading-none">JunaBot</p>
-              <p className="mt-0.5 text-[10px] opacity-75">AI Assistant · Groq Cloud</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold leading-none truncate">JunaBot</p>
+              <p className="mt-0.5 text-[10px] opacity-75 truncate">AI Assistant · Drag header to move</p>
             </div>
             <button
+              type="button"
               onClick={() => setOpen(false)}
-              className="rounded-full p-1 opacity-70 hover:opacity-100 hover:bg-primary-foreground/10 transition-colors"
+              className="rounded-full p-1 opacity-70 hover:opacity-100 hover:bg-primary-foreground/15 transition-colors shrink-0"
+              title="Close chat"
             >
               <XIcon className="size-4" />
             </button>
@@ -201,21 +361,22 @@ export function AgentWidget() {
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
                   <Loader2Icon className="size-3.5 animate-spin text-primary" />
                 </div>
-                <span className="italic">JunaBot is thinking…</span>
+                <span className="italic">JunaBot is checking the database…</span>
               </div>
             )}
             <div ref={bottomRef} />
           </div>
 
-          {/* Quick prompts */}
-          {messages.length <= 1 && (
-            <div className="flex flex-wrap gap-1.5 border-t px-4 py-2">
+          {/* Quick prompt pills */}
+          {messages.length <= 2 && (
+            <div className="flex flex-wrap gap-1.5 border-t bg-muted/20 px-3 py-2">
               {QUICK_PROMPTS.map((p) => (
                 <button
                   key={p}
+                  type="button"
                   onClick={() => send(p)}
                   disabled={isPending}
-                  className="rounded-full border border-primary/30 bg-primary/5 px-2.5 py-1 text-[11px] font-medium text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+                  className="rounded-full border border-primary/25 bg-background px-2.5 py-1 text-[11px] font-medium text-primary hover:bg-primary hover:text-primary-foreground transition-colors disabled:opacity-50"
                 >
                   {p}
                 </button>
@@ -223,18 +384,19 @@ export function AgentWidget() {
             </div>
           )}
 
-          {/* Input */}
-          <div className="flex items-center gap-2 border-t px-3 py-3">
+          {/* Input field */}
+          <div className="flex items-center gap-2 border-t px-3 py-3 bg-card">
             <Input
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="New lead, booking, expense…"
-              className="h-9 flex-1 rounded-full bg-muted text-sm border-0 px-4 focus-visible:ring-1"
+              placeholder="Ask about finances or describe a lead/booking…"
+              className="h-9 flex-1 rounded-full bg-muted text-xs border-0 px-4 focus-visible:ring-1"
               disabled={isPending}
             />
             <Button
+              type="button"
               onClick={() => send(input)}
               disabled={!input.trim() || isPending}
               size="sm"

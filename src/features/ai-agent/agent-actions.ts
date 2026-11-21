@@ -1,7 +1,7 @@
 "use server";
 
 // src/features/ai-agent/agent-actions.ts
-// Server actions that execute the AI tool calls against the real DB
+// Server actions that execute the AI tool calls against the real DB with extreme input hardening
 
 import { requireRole } from "@/lib/auth-guards";
 import { createLead } from "@/features/leads/actions";
@@ -10,13 +10,46 @@ import { db } from "@/lib/db";
 import { nextCode } from "@/lib/codes";
 import { startOfTodayIST } from "@/lib/dates";
 import { inr } from "@/lib/format";
-import { parseMonth } from "@/features/metrics/filters";
+import { currentISTMonth, parseMonth } from "@/features/metrics/filters";
 import { getFirmCapitalSummary } from "@/features/capital/queries";
 import { getCashPosition, getMonthlyPLData } from "@/features/metrics/queries";
 
 export type AgentToolResult =
   | { ok: true; message: string; link?: string }
   | { ok: false; error: string };
+
+const VALID_EXPENSE_CATEGORIES = new Set([
+  "OPERATOR_FEE",
+  "TRANSPORT",
+  "FOOD",
+  "VENUE_CUT",
+  "CONSUMABLES",
+  "EQUIPMENT",
+  "SOFTWARE",
+  "CARPENTRY",
+  "EMI",
+  "MARKETING",
+  "ADMIN",
+  "OTHER",
+]);
+
+function sanitizePhone(raw: string | undefined): string | null {
+  if (!raw) return null;
+  const digits = raw.replace(/\D/g, "");
+  // Remove leading country code 91 or 0 if present
+  const cleaned = digits.replace(/^(91|0)/, "");
+  if (cleaned.length >= 10) {
+    return cleaned.slice(-10);
+  }
+  return null;
+}
+
+function safeDate(raw: string | undefined, fallback?: Date): Date | undefined {
+  if (!raw) return fallback;
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return fallback;
+  return d;
+}
 
 // ── Create Lead ──────────────────────────────────────────────────────────────
 export async function agentCreateLead(args: {
@@ -28,16 +61,31 @@ export async function agentCreateLead(args: {
   targetDate?: string;
 }): Promise<AgentToolResult> {
   try {
-    // Normalize phone
-    const phone = args.phone.replace(/\D/g, "").replace(/^(91|0)/, "").slice(0, 10);
+    const rawName = (args.clientName || "").trim();
+    if (!rawName) {
+      return { ok: false, error: "Please provide a client name for the lead." };
+    }
+    const clientName = rawName.slice(0, 100);
+
+    const phone = sanitizePhone(args.phone);
+    if (!phone) {
+      return {
+        ok: false,
+        error: `"${args.phone || ""}" is not a valid 10-digit Indian phone number. Please provide a 10-digit mobile number.`,
+      };
+    }
+
+    const city = (args.city || "").trim().slice(0, 80);
+    const notes = (args.notes || "").trim().slice(0, 1000);
+    const targetDate = safeDate(args.targetDate);
 
     const result = await createLead({
-      clientName: args.clientName.trim(),
+      clientName,
       phone,
-      city: args.city?.trim() ?? "",
-      source: args.source ?? "OTHER",
-      notes: args.notes?.trim() ?? "",
-      targetDate: args.targetDate ? new Date(args.targetDate) : undefined,
+      city: city || undefined,
+      source: args.source || "OTHER",
+      notes: notes || undefined,
+      targetDate,
     });
 
     if (!result.ok) return { ok: false, error: result.error };
@@ -45,7 +93,7 @@ export async function agentCreateLead(args: {
     const warning = result.duplicateWarning ? ` ⚠️ ${result.duplicateWarning}` : "";
     return {
       ok: true,
-      message: `✅ Lead created: **${args.clientName}** (${result.data.code}) from ${args.city ?? "unknown city"}.${warning}`,
+      message: `✅ Lead created: **${clientName}** (${result.data.code}) from ${city || "unspecified region"}.${warning}`,
       link: `/leads/${result.data.code}`,
     };
   } catch (e) {
@@ -68,30 +116,72 @@ export async function agentCreateBooking(args: {
 }): Promise<AgentToolResult> {
   try {
     await requireRole(["PARTNER", "SALES"]);
-    const phone = args.phone.replace(/\D/g, "").replace(/^(91|0)/, "").slice(0, 10);
+
+    const rawName = (args.clientName || "").trim();
+    if (!rawName) {
+      return { ok: false, error: "Please provide a client name for the booking." };
+    }
+    const clientName = rawName.slice(0, 100);
+
+    const phone = sanitizePhone(args.phone);
+    if (!phone) {
+      return {
+        ok: false,
+        error: `"${args.phone || ""}" is not a valid 10-digit Indian phone number. Please provide a 10-digit mobile number.`,
+      };
+    }
+
+    const eventDate = safeDate(args.eventDate);
+    if (!eventDate) {
+      return {
+        ok: false,
+        error: `"${args.eventDate || ""}" is not a recognized date. Please provide a valid date format like YYYY-MM-DD.`,
+      };
+    }
+
+    const numPrice = Number(args.basePrice);
+    if (isNaN(numPrice) || numPrice <= 0) {
+      return {
+        ok: false,
+        error: "Please specify a valid positive package or booking fee in rupees.",
+      };
+    }
+    const basePrice = Math.round(numPrice);
+
+    let advance = 0;
+    if (args.advance !== undefined && args.advance !== null) {
+      const numAdv = Number(args.advance);
+      if (!isNaN(numAdv) && numAdv > 0) {
+        advance = Math.round(numAdv);
+      }
+    }
+
+    const city = (args.city || "").trim().slice(0, 80) || null;
+    const venue = (args.venue || "").trim().slice(0, 150) || null;
+    const notes = (args.notes || "").trim().slice(0, 1000) || null;
 
     const booking = await db.$transaction(async (tx) => {
       const code = await nextCode("JB", tx);
       return await tx.booking.create({
         data: {
           code,
-          clientName: args.clientName.trim(),
+          clientName,
           phone,
-          city: args.city?.trim() ?? null,
-          venue: args.venue?.trim() ?? null,
-          eventDate: new Date(args.eventDate),
-          startTime: args.startTime ?? null,
-          endTime: args.endTime ?? null,
-          basePrice: Math.round(args.basePrice),
+          city,
+          venue,
+          eventDate,
+          startTime: (args.startTime || "").trim().slice(0, 20) || null,
+          endTime: (args.endTime || "").trim().slice(0, 20) || null,
+          basePrice,
           travelCharge: 0,
           discount: 0,
           packageName: "Custom",
           status: "CONFIRMED",
-          notes: args.notes?.trim() ?? null,
+          notes,
           activities: {
             create: {
               type: "CREATED",
-              message: `Booking created via AI Agent for ${args.clientName} on ${args.eventDate}`,
+              message: `Booking created via AI Agent for ${clientName} on ${eventDate.toISOString().slice(0, 10)}`,
             },
           },
         },
@@ -99,11 +189,11 @@ export async function agentCreateBooking(args: {
     });
 
     // Record advance payment if provided
-    if (args.advance && args.advance > 0) {
+    if (advance > 0) {
       await db.payment.create({
         data: {
           bookingId: booking.id,
-          amount: Math.round(args.advance),
+          amount: advance,
           kind: "ADVANCE",
           mode: "UPI",
           paidOn: new Date(),
@@ -111,9 +201,12 @@ export async function agentCreateBooking(args: {
       });
     }
 
+    const formattedDate = eventDate.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
+    const advNote = advance > 0 ? ` Advance of ${inr(advance)} recorded.` : "";
+
     return {
       ok: true,
-      message: `✅ Booking created: **${args.clientName}** (${booking.code}) on ${new Date(args.eventDate).toLocaleDateString("en-IN")} for ₹${args.basePrice.toLocaleString("en-IN")}${args.advance ? `. Advance: ₹${args.advance.toLocaleString("en-IN")} recorded.` : "."}`,
+      message: `✅ Booking created: **${clientName}** (${booking.code}) on ${formattedDate} for ${inr(basePrice)}.${advNote}`,
       link: `/bookings/${booking.code}`,
     };
   } catch (e) {
@@ -130,19 +223,35 @@ export async function agentAddExpense(args: {
   note?: string;
 }): Promise<AgentToolResult> {
   try {
+    const numAmount = Number(args.amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      return { ok: false, error: "Please enter a valid positive expense amount in rupees." };
+    }
+    const amount = Math.round(numAmount);
+
+    let category = (args.category || "OTHER").toUpperCase().trim();
+    if (!VALID_EXPENSE_CATEGORIES.has(category)) {
+      category = "OTHER";
+    }
+
+    const spentOn = safeDate(args.spentOn, new Date())!;
+    const paidBy = (args.paidBy || "").trim().slice(0, 80) || undefined;
+    const note = (args.note || "").trim().slice(0, 500) || undefined;
+
     const result = await createExpense({
-      category: args.category,
-      amount: Math.round(args.amount),
-      spentOn: new Date(args.spentOn),
-      paidBy: args.paidBy?.trim() ?? undefined,
-      note: args.note?.trim() ?? undefined,
+      category: category as any,
+      amount,
+      spentOn,
+      paidBy,
+      note,
     });
 
     if (!result.ok) return { ok: false, error: result.error };
 
+    const formattedDate = spentOn.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
     return {
       ok: true,
-      message: `✅ Expense recorded: ₹${args.amount.toLocaleString("en-IN")} for **${args.category.replace(/_/g, " ")}** on ${new Date(args.spentOn).toLocaleDateString("en-IN")}.`,
+      message: `✅ Expense recorded: ${inr(amount)} for **${category.replace(/_/g, " ")}** on ${formattedDate}.`,
       link: `/expenditure`,
     };
   } catch (e) {
@@ -160,7 +269,9 @@ export async function agentQuerySummary(args: {
     const now = new Date();
     const startToday = startOfTodayIST(now);
 
-    switch (args.queryType) {
+    const qType = (args.queryType || "").toLowerCase().trim();
+
+    switch (qType) {
       case "monthly_expenses": {
         const targetMonth = parseMonth(args.month);
         const [yearStr, monthStr] = targetMonth.split("-");
@@ -295,7 +406,10 @@ export async function agentQuerySummary(args: {
       }
 
       default:
-        return { ok: false, error: "Unknown query type" };
+        return {
+          ok: false,
+          error: `Unrecognized query type: "${args.queryType}". You can ask about monthly expenses, partner financials, upcoming bookings, leads, or overall stats.`,
+        };
     }
   } catch (e) {
     return { ok: false, error: `Query failed: ${e instanceof Error ? e.message : "unknown error"}` };

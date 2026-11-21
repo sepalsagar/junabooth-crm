@@ -60,17 +60,30 @@ export async function POST(req: NextRequest) {
     // Auth check
     await requireUser();
 
-    const body = await req.json() as { messages: ChatCompletionMessageParam[] };
-    const { messages } = body;
+    const body = (await req.json().catch(() => ({}))) as { messages?: ChatCompletionMessageParam[] };
+    const rawMessages = Array.isArray(body?.messages) ? body.messages : [];
 
-    if (!messages?.length) {
-      return NextResponse.json({ error: "No messages provided" }, { status: 400 });
+    if (!rawMessages.length) {
+      return NextResponse.json({ error: "Please enter a message to begin." }, { status: 400 });
+    }
+
+    // Sanitize and bound message sizes (prevent token-exhaustion or overflow DOS)
+    const sanitizedMessages: ChatCompletionMessageParam[] = rawMessages
+      .slice(-8)
+      .filter((m) => m && typeof m.content === "string")
+      .map((m) => ({
+        role: m.role === "user" || m.role === "assistant" ? m.role : "user",
+        content: (m.content as string).replace(/\0/g, "").slice(0, 4000),
+      }));
+
+    if (!sanitizedMessages.length) {
+      return NextResponse.json({ error: "Message content cannot be empty." }, { status: 400 });
     }
 
     // Build full message list with system prompt
     const fullMessages: ChatCompletionMessageParam[] = [
       { role: "system", content: buildSystemPrompt() },
-      ...messages.slice(-10), // Keep last 10 for context window efficiency
+      ...sanitizedMessages,
     ];
 
     const groq = getGroqClient();
