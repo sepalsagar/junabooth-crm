@@ -334,3 +334,55 @@ export async function setFollowUp(rawInput: unknown): Promise<ActionResult<{ id:
     data: { id: data.leadId },
   };
 }
+
+export async function deleteLead(leadId: string): Promise<ActionResult<{ id: string }>> {
+  const session = await requireRole(["PARTNER", "SALES"]);
+
+  if (!leadId) {
+    return { ok: false, error: "Lead ID is required." };
+  }
+
+  const existing = await db.lead.findUnique({
+    where: { id: leadId },
+    include: { booking: { select: { id: true, code: true } } },
+  });
+
+  if (!existing) {
+    return { ok: false, error: "Lead not found." };
+  }
+
+  if (existing.booking) {
+    return {
+      ok: false,
+      error: `Cannot delete this lead because it is linked to active booking ${existing.booking.code}. Unlink or remove the booking first.`,
+    };
+  }
+
+  await db.$transaction(async (tx) => {
+    // Delete associated activities
+    await tx.leadActivity.deleteMany({ where: { leadId } });
+
+    // Record deletion in audit log
+    await tx.auditLog.create({
+      data: {
+        actorId: session.user.id,
+        action: "DELETE",
+        entity: "Lead",
+        entityId: leadId,
+        metadata: {
+          code: existing.code,
+          clientName: existing.clientName,
+          phone: existing.phone,
+        },
+      },
+    });
+
+    // Delete lead record
+    await tx.lead.delete({ where: { id: leadId } });
+  });
+
+  revalidatePath("/leads");
+  revalidatePath("/overview");
+
+  return { ok: true, data: { id: leadId } };
+}

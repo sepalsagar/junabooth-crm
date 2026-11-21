@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "./status-badge";
 import { LeadStatusDialog } from "./lead-status-dialog";
 import { ConvertLeadSheet } from "@/features/bookings/components/convert-lead-sheet";
-import { addNote, updateLead } from "../actions";
+import { addNote, deleteLead, updateLead } from "../actions";
 import { telLink, whatsappLink } from "../phone";
 import { formatDateIST, formatDateTimeIST, toISODateStringIST } from "@/lib/dates";
 import { inr } from "@/lib/format";
@@ -22,7 +22,17 @@ import {
   MessageSquareIcon,
   PhoneIcon,
   SendIcon,
+  Trash2Icon,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { LEAD_SOURCES, type LeadSourceType, type LeadStatusType } from "../schema";
 
 interface LeadDetailProps {
@@ -77,6 +87,8 @@ export function LeadDetailView({ lead, users, packages = [] }: LeadDetailProps) 
   const router = useRouter();
   const [isUpdating, startUpdateTransition] = useTransition();
   const [isAddingNote, startNoteTransition] = useTransition();
+  const [isDeleting, startDeleteTransition] = useTransition();
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   // Editable details form state
   const [clientName, setClientName] = useState(lead.clientName);
@@ -100,6 +112,19 @@ export function LeadDetailView({ lead, users, packages = [] }: LeadDetailProps) 
 
   // Note form state
   const [newNote, setNewNote] = useState("");
+
+  const handleDelete = () => {
+    startDeleteTransition(async () => {
+      const res = await deleteLead(lead.id);
+      if (!res.ok) {
+        toast.error(res.error || "Failed to delete lead");
+        return;
+      }
+      toast.success("Lead deleted successfully");
+      setDeleteOpen(false);
+      router.push("/leads");
+    });
+  };
 
   const handleSaveDetails = (e: React.FormEvent) => {
     e.preventDefault();
@@ -210,6 +235,50 @@ export function LeadDetailView({ lead, users, packages = [] }: LeadDetailProps) 
           {!lead.booking && lead.status !== "WON" && (
             <ConvertLeadSheet lead={lead} packages={packages} />
           )}
+
+          {/* Delete Lead Button */}
+          <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+            <DialogTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/30"
+                />
+              }
+            >
+              <Trash2Icon className="h-4 w-4" />
+              <span>Delete</span>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Delete Lead</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to permanently delete lead{" "}
+                  <strong className="text-foreground">{lead.code}</strong> (
+                  {lead.clientName})? This action cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setDeleteOpen(false)}
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? "Deleting…" : "Delete Lead"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
