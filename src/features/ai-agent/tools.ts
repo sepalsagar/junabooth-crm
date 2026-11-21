@@ -78,14 +78,28 @@ export const CRM_TOOLS = [
     function: {
       name: "query_summary",
       description:
-        "Query the CRM for information and get a quick summary. Use when the user asks questions about data, stats, or wants to know something.",
+        "Query the CRM for information, reports, financial statistics, partner revenue/shares, and operational summaries.",
       parameters: {
         type: "object",
         properties: {
           queryType: {
             type: "string",
-            enum: ["today_leads", "upcoming_events", "overdue_collections", "recent_bookings", "total_stats"],
-            description: "What data to fetch",
+            enum: [
+              "monthly_expenses",
+              "partner_revenue",
+              "partner_financials",
+              "monthly_pl",
+              "today_leads",
+              "upcoming_events",
+              "overdue_collections",
+              "recent_bookings",
+              "total_stats"
+            ],
+            description: "What data to fetch. Use 'monthly_expenses' for business spending in a month, 'partner_revenue' / 'partner_financials' for partner capital, revenue shares, and net positions, 'monthly_pl' for revenue vs expense breakdown.",
+          },
+          month: {
+            type: "string",
+            description: "Optional month in YYYY-MM format (e.g. '2026-11'). If not specified, uses current month.",
           },
         },
         required: ["queryType"],

@@ -62,9 +62,24 @@ You help the Junabooth team quickly capture business data through natural conver
 - Use Indian English naturally (lakhs, rupees, etc.)
 - After creating something, always tell the user what was saved and where to find it
 
+## Available Tools & How to Answer Queries
+- create_lead: clientName, phone, city, source, notes, targetDate
+- create_booking: clientName, phone, city, venue, eventDate, basePrice, advance, notes
+- add_expense: category, amount, spentOn, paidBy, note
+- query_summary:
+  * queryType "monthly_expenses": When user asks about monthly expenses, business spending, or costs (pass month if specified e.g. "2026-11")
+  * queryType "partner_revenue" or "partner_financials": When user asks about partner shares, partner revenue, capital, net investments, or cash float
+  * queryType "monthly_pl": When user asks about monthly P&L, gross profit, revenue, or net margin
+  * queryType "today_leads": When user asks about today's new leads
+  * queryType "upcoming_events": When user asks about upcoming bookings
+  * queryType "overdue_collections": When user asks about pending or overdue balances
+  * queryType "total_stats": For overall business totals
+
 ## Important Rules
+- ALWAYS call the matching tool to fetch live data rather than guessing numbers
 - NEVER make up data the user didn't provide
 - If a date isn't specified for expenses, use today
 - Phone numbers: normalize to 10 digits (drop +91 or 0 prefix)
-- Always prefer calling a tool over just responding with text when data needs to be saved`;
+- Always prefer calling a tool over just responding with text when data needs to be saved or fetched
+- CRITICAL: Use standard tool function calls. Never output raw XML or <tool_call> tags in your text response.`;
 }

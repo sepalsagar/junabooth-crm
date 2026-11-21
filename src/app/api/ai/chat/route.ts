@@ -16,6 +16,45 @@ import type { ChatCompletionMessageParam } from "groq-sdk/resources/chat/complet
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
+function parseTextToolCalls(content: string): Array<{ name: string; args: Record<string, unknown> }> {
+  const calls: Array<{ name: string; args: Record<string, unknown> }> = [];
+
+  // Match: <tool_call> <function=NAME> <parameter=KEY> VALUE </parameter> ... </function> </tool_call>
+  const toolCallRegex = /<tool_call>[\s\S]*?<function=([a-zA-Z0-9_]+)>([\s\S]*?)<\/function>[\s\S]*?<\/tool_call>/gi;
+  let match;
+  while ((match = toolCallRegex.exec(content)) !== null) {
+    const fnName = match[1];
+    const body = match[2];
+    const args: Record<string, unknown> = {};
+
+    const paramRegex = /<parameter=([a-zA-Z0-9_]+)>\s*([\s\S]*?)\s*<\/parameter>/gi;
+    let paramMatch;
+    while ((paramMatch = paramRegex.exec(body)) !== null) {
+      const key = paramMatch[1];
+      const val = paramMatch[2].trim();
+      args[key] = val;
+    }
+
+    calls.push({ name: fnName, args });
+  }
+
+  // Also match JSON in tool_call: <tool_call> { "name": "...", "arguments": { ... } } </tool_call>
+  if (calls.length === 0) {
+    const jsonRegex = /<tool_call>[\s\S]*?(\{[\s\S]*?\})[\s\S]*?<\/tool_call>/gi;
+    let jsonMatch;
+    while ((jsonMatch = jsonRegex.exec(content)) !== null) {
+      try {
+        const parsed = JSON.parse(jsonMatch[1]);
+        if (parsed.name) {
+          calls.push({ name: parsed.name, args: parsed.arguments || parsed.parameters || {} });
+        }
+      } catch {}
+    }
+  }
+
+  return calls;
+}
+
 export async function POST(req: NextRequest) {
   try {
     // Auth check
@@ -51,8 +90,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No response from AI" }, { status: 500 });
     }
 
-    // No tool calls → return text response directly
-    if (!assistantMessage.tool_calls?.length) {
+    // Normalize tool calls: from formal tool_calls or fallback text tags
+    let rawCalls: Array<{ id: string; name: string; args: Record<string, unknown> }> = [];
+
+    if (assistantMessage.tool_calls?.length) {
+      rawCalls = assistantMessage.tool_calls.map((tc) => {
+        let args: Record<string, unknown> = {};
+        try {
+          args = JSON.parse(tc.function.arguments);
+        } catch {}
+        return { id: tc.id, name: tc.function.name, args };
+      });
+    } else if (assistantMessage.content && assistantMessage.content.includes("<tool_call>")) {
+      const parsed = parseTextToolCalls(assistantMessage.content);
+      rawCalls = parsed.map((p, idx) => ({
+        id: `call_${idx}_${Date.now()}`,
+        name: p.name,
+        args: p.args,
+      }));
+    }
+
+    // No tool calls from either source → return text response directly
+    if (rawCalls.length === 0) {
       return NextResponse.json({
         role: "assistant",
         content: assistantMessage.content ?? "",
@@ -64,15 +123,9 @@ export async function POST(req: NextRequest) {
     const toolResults: Array<{ name: string; result: { ok: boolean; message?: string; error?: string; link?: string } }> = [];
     const toolMessages: ChatCompletionMessageParam[] = [];
 
-    for (const toolCall of assistantMessage.tool_calls) {
-      const fnName = toolCall.function.name;
-      let args: Record<string, unknown>;
-      try {
-        args = JSON.parse(toolCall.function.arguments);
-      } catch {
-        args = {};
-      }
-
+    for (const toolCall of rawCalls) {
+      const fnName = toolCall.name;
+      const args = toolCall.args;
       let result: { ok: boolean; message?: string; error?: string; link?: string };
 
       switch (fnName) {
@@ -101,19 +154,47 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Second LLM call — summarise what was done
-    const secondResponse = await groq.chat.completions.create({
-      model: AGENT_MODEL,
-      messages: [
-        ...fullMessages,
-        assistantMessage as ChatCompletionMessageParam,
-        ...toolMessages,
-      ],
-      temperature: 0.3,
-      max_tokens: 512,
-    });
+    // Clean any residual <tool_call>...</tool_call> tags from assistant text
+    let cleanOriginalContent = (assistantMessage.content ?? "")
+      .replace(/<tool_call>[\s\S]*?<\/tool_call>/gi, "")
+      .trim();
 
-    const finalContent = secondResponse.choices[0]?.message?.content ?? "";
+    // Second LLM call — summarise what was done
+    let finalContent = "";
+    try {
+      const secondAssistantMsg: ChatCompletionMessageParam = {
+        role: "assistant",
+        content: cleanOriginalContent || "Executing requested operations...",
+      };
+
+      const secondResponse = await groq.chat.completions.create({
+        model: AGENT_MODEL,
+        messages: [
+          ...fullMessages,
+          secondAssistantMsg,
+          ...toolMessages,
+        ],
+        temperature: 0.3,
+        max_tokens: 512,
+      });
+
+      finalContent = (secondResponse.choices[0]?.message?.content ?? "")
+        .replace(/<tool_call>[\s\S]*?<\/tool_call>/gi, "")
+        .trim();
+    } catch {
+      // If second completion encounters issues, synthesize friendly summary from tool results
+      finalContent = toolResults
+        .filter((tr) => tr.result.ok && tr.result.message)
+        .map((tr) => tr.result.message)
+        .join("\n\n");
+    }
+
+    if (!finalContent) {
+      finalContent = toolResults
+        .filter((tr) => tr.result.ok && tr.result.message)
+        .map((tr) => tr.result.message)
+        .join("\n\n");
+    }
 
     return NextResponse.json({
       role: "assistant",

@@ -9,6 +9,10 @@ import { createExpense } from "@/features/expenses/actions";
 import { db } from "@/lib/db";
 import { nextCode } from "@/lib/codes";
 import { startOfTodayIST } from "@/lib/dates";
+import { inr } from "@/lib/format";
+import { parseMonth } from "@/features/metrics/filters";
+import { getFirmCapitalSummary } from "@/features/capital/queries";
+import { getCashPosition, getMonthlyPLData } from "@/features/metrics/queries";
 
 export type AgentToolResult =
   | { ok: true; message: string; link?: string }
@@ -148,7 +152,8 @@ export async function agentAddExpense(args: {
 
 // ── Query Summary ─────────────────────────────────────────────────────────────
 export async function agentQuerySummary(args: {
-  queryType: "today_leads" | "upcoming_events" | "overdue_collections" | "recent_bookings" | "total_stats";
+  queryType: string;
+  month?: string;
 }): Promise<AgentToolResult> {
   try {
     await requireRole(["PARTNER", "SALES"]);
@@ -156,6 +161,77 @@ export async function agentQuerySummary(args: {
     const startToday = startOfTodayIST(now);
 
     switch (args.queryType) {
+      case "monthly_expenses": {
+        const targetMonth = parseMonth(args.month);
+        const [yearStr, monthStr] = targetMonth.split("-");
+        const y = parseInt(yearStr, 10);
+        const m = parseInt(monthStr, 10);
+        const startOfMonth = new Date(Date.UTC(y, m - 1, 1, 0, 0, 0, 0));
+        const endOfMonth = new Date(Date.UTC(y, m, 0, 23, 59, 59, 999));
+
+        const expenses = await db.expense.findMany({
+          where: {
+            voidedAt: null,
+            spentOn: { gte: startOfMonth, lte: endOfMonth },
+          },
+          select: {
+            category: true,
+            amount: true,
+          },
+        });
+
+        const totalExpense = expenses.reduce((sum, e) => sum + e.amount, 0);
+
+        // Group by category
+        const catMap = new Map<string, number>();
+        for (const e of expenses) {
+          catMap.set(e.category, (catMap.get(e.category) ?? 0) + e.amount);
+        }
+
+        const sortedCats = Array.from(catMap.entries())
+          .sort((a, b) => b[1] - a[1])
+          .map(([cat, amt]) => `• ${cat.replace(/_/g, " ")}: ${inr(amt)}`);
+
+        const catDetails = sortedCats.length > 0 ? `\n\n**Category Breakdown:**\n${sortedCats.join("\n")}` : "";
+
+        return {
+          ok: true,
+          message: `💸 **Total Expenses for ${targetMonth}:** ${inr(totalExpense)} across ${expenses.length} recorded items.${catDetails}`,
+          link: "/expenditure",
+        };
+      }
+
+      case "partner_revenue":
+      case "partner_financials": {
+        const [firmCap, cashPos] = await Promise.all([
+          getFirmCapitalSummary(),
+          getCashPosition(),
+        ]);
+
+        const partnerLines = firmCap.partners.map((p) => {
+          const shareStr = p.share !== null ? `${p.share.toFixed(1)}%` : "0.0%";
+          return `• **${p.name}**: Injected ${inr(p.injected)} | Withdrawn ${inr(p.withdrawn)} | Net ${inr(p.net)} (Share: ${shareStr})`;
+        });
+
+        return {
+          ok: true,
+          message: `💼 **Partner Financials & Equity Shares:**\n\n${partnerLines.join("\n")}\n\n**Firm Summary:**\n• Total Injected: ${inr(firmCap.firmInjected)}\n• Total Withdrawn: ${inr(firmCap.firmWithdrawn)}\n• Net Invested: ${inr(firmCap.firmNet)}\n• Current Cash Float: ${inr(cashPos.total)}`,
+          link: "/partners",
+        };
+      }
+
+      case "monthly_pl": {
+        const targetMonth = parseMonth(args.month);
+        const pl = await getMonthlyPLData(targetMonth);
+        const cur = pl.current;
+
+        return {
+          ok: true,
+          message: `📈 **P&L Summary for ${targetMonth}:**\n• Billed Revenue: ${inr(cur.revenue)} (${cur.bookingCount} events)\n• Direct Event Costs: ${inr(cur.directCosts)}\n• Gross Profit: ${inr(cur.grossProfit)} (${cur.grossMargin ?? 0}%)\n• Overheads: ${inr(cur.overheads.total)}\n• **Net Profit:** ${inr(cur.netProfit)} (${cur.netMargin ?? 0}% margin)`,
+          link: "/reports",
+        };
+      }
+
       case "today_leads": {
         const leads = await db.lead.findMany({
           where: { createdAt: { gte: startToday } },
