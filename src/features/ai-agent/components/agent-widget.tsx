@@ -181,7 +181,7 @@ export function AgentWidget() {
             </div>
             <div className="flex-1">
               <p className="text-sm font-semibold leading-none">JunaBot</p>
-              <p className="mt-0.5 text-[10px] opacity-75">AI Assistant · Groq LLaMA 3.3</p>
+              <p className="mt-0.5 text-[10px] opacity-75">AI Assistant · Groq Cloud</p>
             </div>
             <button
               onClick={() => setOpen(false)}

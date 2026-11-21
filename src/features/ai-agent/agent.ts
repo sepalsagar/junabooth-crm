@@ -18,7 +18,7 @@ export function getGroqClient(): Groq {
   return _groq;
 }
 
-export const AGENT_MODEL = "llama-3.3-70b-versatile";
+export const AGENT_MODEL = process.env.GROQ_MODEL || "qwen/qwen3.8-27b";
 
 // Today's date in IST for context
 function todayIST(): string {
